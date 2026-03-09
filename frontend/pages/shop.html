@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeCharge</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-inner">
+            <a class="brand" href="../index.html" aria-label="SafeCharge Home">SafeCharge</a>
+
+            <nav class="main-nav" aria-label="Main navigation">
+                <a href="products.html">Products</a>
+                <a href="contact.html">Contact</a>
+                <a href="shop.html">Buy our products</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="hero">
+        <p class="kicker">ONLINE STORE</p>
+        <h1>Buy Our Products</h1>
+        <p>Pick your flavor and build your cart.</p>
+
+        <section class="shop-layout" aria-label="Shop and cart">
+            <div id="product-grid" class="product-grid"></div>
+
+            <aside class="cart-panel" aria-label="Shopping cart">
+                <h2>Your Cart</h2>
+                <ul id="cart-items" class="cart-items"></ul>
+                <p id="cart-empty" class="cart-empty">Your cart is empty.</p>
+                <div class="cart-total-row">
+                    <span>Total</span>
+                    <strong id="cart-total">$0.00</strong>
+                </div>
+                <label class="checkout-label" for="checkout-name">Name</label>
+                <input id="checkout-name" class="checkout-input" type="text" placeholder="Your name">
+                <label class="checkout-label" for="checkout-email">Email</label>
+                <input id="checkout-email" class="checkout-input" type="email" placeholder="you@email.com">
+                <button id="checkout-button" type="button" class="checkout-button">Checkout</button>
+                <button id="clear-cart" type="button" class="clear-cart">Clear Cart</button>
+                <p id="checkout-status" class="checkout-status" aria-live="polite"></p>
+            </aside>
+        </section>
+    </main>
+    <script src="../js/script.js" defer></script>
+</body>
+</html>
