@@ -23,6 +23,13 @@ pip install -r requirements.txt
 uvicorn main:app --reload --host 127.0.0.1 --port 8000
 ```
 
+You can also run it directly:
+
+```bash
+cd backend
+python3 main.py
+```
+
 Then open the frontend and use the Shop page. The frontend calls:
 - `http://127.0.0.1:8000/api/products`
 - `http://127.0.0.1:8000/api/orders`

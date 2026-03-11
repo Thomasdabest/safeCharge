@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
@@ -79,8 +80,14 @@ def _ensure_orders_file() -> None:
 
 def _read_orders() -> list[dict]:
     _ensure_orders_file()
-    with ORDERS_FILE.open("r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with ORDERS_FILE.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+    except json.JSONDecodeError:
+        _write_orders([])
+        return []
+
+    return data if isinstance(data, list) else []
 
 
 def _write_orders(orders: list[dict]) -> None:
@@ -127,7 +134,6 @@ def create_order(order: OrderIn) -> dict:
     order_record = {
         "id": f"ord_{uuid4().hex[:10]}",
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "customer": order.customer.model_dump(),
         "payment_method": order.payment_method,
         "items": normalized_items,
         "subtotal": round(subtotal, 2),
@@ -150,3 +156,14 @@ def create_order(order: OrderIn) -> dict:
 @app.get("/api/orders")
 def list_orders() -> dict:
     return {"orders": _read_orders()}
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(
+        "main:app",
+        host=os.getenv("HOST", "127.0.0.1"),
+        port=int(os.getenv("PORT", "8000")),
+        reload=os.getenv("RELOAD", "false").lower() == "true",
+    )
