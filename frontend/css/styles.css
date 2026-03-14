@@ -18,7 +18,7 @@ body {
     min-height: 100vh;
     font-family: 'Barlow Condensed', 'Franklin Gothic Medium', sans-serif;
     color: var(--text);
-    background: linear-gradient(135deg, #6f2bff 0%, #ffb6d9 100%);
+    background: linear-gradient(135deg, #000dff 0%, #00ffbb 100%);
 }
 
 .site-header {
@@ -27,7 +27,7 @@ body {
     z-index: 10;
     border-bottom: 1px solid rgba(255, 255, 255, 0.14);
     backdrop-filter: blur(9px);
-    background: linear-gradient(135deg, #6f2bff 0%, #ffb6d9 100%);
+    background: linear-gradient(135deg, #000dff 0%, #00ffbb 100%);
 }
 
 .header-inner {
@@ -76,6 +76,39 @@ body {
     margin: 2.5rem auto 0;
 }
 
+.hero-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 460px);
+    gap: 2rem;
+    align-items: center;
+}
+
+.hero-copy h2 {
+    margin: 0.6rem 0 0;
+    color: var(--ice);
+    font-size: clamp(1.2rem, 2.6vw, 2rem);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.hero-image-card {
+    margin: 0;
+    padding: 0.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 24px;
+    background: rgba(8, 11, 15, 0.28);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+}
+
+.hero-image {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    border-radius: 18px;
+}
+
 .kicker {
     margin: 0;
     color: var(--neon);
@@ -119,6 +152,11 @@ h1 {
         width: 100%;
         justify-content: center;
     }
+
+    .hero-layout {
+        grid-template-columns: 1fr;
+    }
+
 }
 
 .shop-layout {

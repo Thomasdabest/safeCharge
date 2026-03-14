@@ -17,5 +17,31 @@
     "total": 4.31,
     "currency": "USD",
     "status": "created"
+  },
+  {
+    "id": "ord_765485ef9e",
+    "created_at": "2026-03-13T19:19:02.531801+00:00",
+    "payment_method": "card",
+    "items": [
+      {
+        "product_id": "berry-surge",
+        "name": "Berry Surge",
+        "unit_price": 3.99,
+        "quantity": 1,
+        "line_total": 3.99
+      },
+      {
+        "product_id": "tropical-bolt",
+        "name": "Tropical Bolt",
+        "unit_price": 4.29,
+        "quantity": 13,
+        "line_total": 55.77
+      }
+    ],
+    "subtotal": 59.76,
+    "tax": 4.78,
+    "total": 64.54,
+    "currency": "USD",
+    "status": "created"
   }
 ]
