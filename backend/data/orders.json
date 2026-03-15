@@ -43,5 +43,24 @@
     "total": 64.54,
     "currency": "USD",
     "status": "created"
+  },
+  {
+    "id": "ord_3711b5f5a4",
+    "created_at": "2026-03-15T15:57:57.265723+00:00",
+    "payment_method": "card",
+    "items": [
+      {
+        "product_id": "original-charge",
+        "name": "Original Charge",
+        "unit_price": 3.49,
+        "quantity": 2,
+        "line_total": 6.98
+      }
+    ],
+    "subtotal": 6.98,
+    "tax": 0.56,
+    "total": 7.54,
+    "currency": "USD",
+    "status": "created"
   }
 ]
