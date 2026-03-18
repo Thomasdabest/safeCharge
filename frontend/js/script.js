@@ -12,10 +12,17 @@
     const checkoutButton = document.getElementById('checkout-button');
     const checkoutName = document.getElementById('checkout-name');
     const checkoutEmail = document.getElementById('checkout-email');
+    const checkoutPayment = document.getElementById('checkout-payment');
+    const squarePaymentPanel = document.getElementById('square-payment-panel');
+    const squareCardContainer = document.getElementById('square-card');
     const checkoutStatus = document.getElementById('checkout-status');
 
     const cartCountElements = document.querySelectorAll('[data-cart-count]');
     let productsById = {};
+    let paymentConfig = null;
+    let squareCard = null;
+    let squareCardReady = false;
+    let squareScriptPromise = null;
 
     function normalizeCart(rawItems) {
         if (!Array.isArray(rawItems)) {
@@ -144,6 +151,114 @@
         }, {});
 
         return products;
+    }
+
+    async function fetchPaymentConfig() {
+        const response = await fetch(`${API_BASE}/api/payments/config`);
+        if (!response.ok) {
+            throw new Error('Unable to load payment configuration.');
+        }
+
+        const data = await response.json();
+        return data.square || null;
+    }
+
+    function getSelectedPaymentMethod() {
+        return checkoutPayment ? checkoutPayment.value : 'card';
+    }
+
+    function getOrderTotal(cart) {
+        const subtotal = getSubtotal(cart);
+        const tax = subtotal * 0.08;
+        return Number((subtotal + tax).toFixed(2));
+    }
+
+    function loadSquareScript(scriptUrl) {
+        if (window.Square) {
+            return Promise.resolve(window.Square);
+        }
+
+        if (squareScriptPromise) {
+            return squareScriptPromise;
+        }
+
+        squareScriptPromise = new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = scriptUrl;
+            script.async = true;
+            script.onload = () => resolve(window.Square);
+            script.onerror = () => reject(new Error('Unable to load the Square payment form.'));
+            document.head.appendChild(script);
+        });
+
+        return squareScriptPromise;
+    }
+
+    async function ensureSquareCard() {
+        if (!paymentConfig || !paymentConfig.enabled) {
+            throw new Error('Square is not configured yet.');
+        }
+
+        if (!squareCardContainer) {
+            throw new Error('Square card container missing.');
+        }
+
+        if (squareCardReady && squareCard) {
+            return squareCard;
+        }
+
+        const Square = await loadSquareScript(paymentConfig.script_url);
+        if (!Square || typeof Square.payments !== 'function') {
+            throw new Error('Square payment form unavailable.');
+        }
+
+        const payments = Square.payments(paymentConfig.application_id, paymentConfig.location_id);
+        squareCard = await payments.card();
+        await squareCard.attach('#square-card');
+        squareCardReady = true;
+        return squareCard;
+    }
+
+    async function updatePaymentUi() {
+        if (!checkoutPayment || !squarePaymentPanel) {
+            return;
+        }
+
+        const isSquare = getSelectedPaymentMethod() === 'square';
+        squarePaymentPanel.hidden = !isSquare;
+
+        if (!isSquare) {
+            return;
+        }
+
+        if (!paymentConfig || !paymentConfig.enabled) {
+            squarePaymentPanel.hidden = true;
+            checkoutPayment.value = 'card';
+            setStatus(checkoutStatus, 'Square is unavailable until the server is configured.', true);
+            return;
+        }
+
+        try {
+            await ensureSquareCard();
+            if (checkoutStatus && checkoutStatus.textContent === 'Square is unavailable until the server is configured.') {
+                setStatus(checkoutStatus, '', false);
+            }
+        } catch (error) {
+            checkoutPayment.value = 'card';
+            squarePaymentPanel.hidden = true;
+            setStatus(checkoutStatus, error.message || 'Square is unavailable.', true);
+        }
+    }
+
+    async function tokenizeSquareCard() {
+        const card = await ensureSquareCard();
+        const result = await card.tokenize();
+
+        if (result.status !== 'OK' || !result.token) {
+            throw new Error('Square could not verify your card details.');
+        }
+
+        return result.token;
     }
 
     function renderProductGrid(products) {
@@ -277,14 +392,21 @@
     async function checkout(cart) {
         const name = checkoutName ? checkoutName.value.trim() : '';
         const email = checkoutEmail ? checkoutEmail.value.trim() : '';
+        const paymentMethod = getSelectedPaymentMethod();
 
         if (!name || !email) {
             throw new Error('Enter your name and email to checkout.');
         }
 
+        let sourceId = null;
+        if (paymentMethod === 'square') {
+            sourceId = await tokenizeSquareCard();
+        }
+
         const payload = {
             customer: { name, email },
-            payment_method: 'card',
+            payment_method: paymentMethod,
+            source_id: sourceId,
             items: cart.map((item) => ({
                 product_id: item.product_id,
                 quantity: item.quantity
@@ -316,6 +438,7 @@
 
         try {
             await fetchProducts();
+            paymentConfig = await fetchPaymentConfig();
             cart = applyProductInfo(cart);
             writeCart(cart);
             updateCartCountBadge(cart);
@@ -324,6 +447,22 @@
         } catch (_error) {
             setStatus(checkoutStatus, 'Backend offline. You can still edit cart, but checkout is unavailable.', true);
         }
+
+        if (checkoutPayment) {
+            if (!paymentConfig || !paymentConfig.enabled) {
+                const squareOption = checkoutPayment.querySelector('option[value="square"]');
+                if (squareOption) {
+                    squareOption.disabled = true;
+                }
+            }
+
+            checkoutPayment.addEventListener('change', () => {
+                setStatus(checkoutStatus, '', false);
+                updatePaymentUi();
+            });
+        }
+
+        await updatePaymentUi();
 
         cartList.addEventListener('click', (event) => {
             const target = event.target;
@@ -379,7 +518,16 @@
                 if (checkoutEmail) {
                     checkoutEmail.value = '';
                 }
-                setStatus(checkoutStatus, `Order placed: ${data.order.id}`, false);
+                if (checkoutPayment) {
+                    checkoutPayment.value = 'card';
+                }
+                const receiptSuffix = data.order.receipt_url ? ' Receipt ready.' : '';
+                setStatus(
+                    checkoutStatus,
+                    `Order placed: ${data.order.id} via ${data.order.payment_method} for ${formatPrice(data.order.total)}.${receiptSuffix}`,
+                    false
+                );
+                await updatePaymentUi();
             } catch (error) {
                 setStatus(checkoutStatus, error.message || 'Checkout failed.', true);
             } finally {

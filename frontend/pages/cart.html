@@ -41,6 +41,17 @@
                 <input id="checkout-name" class="checkout-input" type="text" placeholder="Your name">
                 <label class="checkout-label" for="checkout-email">Email</label>
                 <input id="checkout-email" class="checkout-input" type="email" placeholder="you@email.com">
+                <label class="checkout-label" for="checkout-payment">Payment</label>
+                <select id="checkout-payment" class="checkout-input">
+                    <option value="card">Card</option>
+                    <option value="square">Square</option>
+                    <option value="paypal">PayPal</option>
+                    <option value="cash">Cash</option>
+                </select>
+                <div id="square-payment-panel" class="square-payment-panel" hidden>
+                    <p class="square-payment-copy">Enter your card details securely with Square.</p>
+                    <div id="square-card" class="square-card-container"></div>
+                </div>
                 <button id="checkout-button" type="button" class="checkout-button">Place Order</button>
                 <p id="checkout-status" class="checkout-status" aria-live="polite"></p>
             </section>
