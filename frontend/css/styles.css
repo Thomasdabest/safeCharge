@@ -16,6 +16,8 @@
 body {
     margin: 0;
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
     font-family: 'Barlow Condensed', 'Franklin Gothic Medium', sans-serif;
     color: var(--text);
     background: linear-gradient(135deg, #000dff 0%, #00ffbb 100%);
@@ -97,7 +99,7 @@ body {
     padding: 0.8rem;
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 24px;
-    background: rgba(8, 11, 15, 0.28);
+    background: rgba(0, 110, 255, 0.28);
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
 }
 
@@ -133,6 +135,57 @@ h1 {
     font-size: clamp(1rem, 2vw, 1.25rem);
 }
 
+.contact-page {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 76px - 2.5rem);
+}
+
+.contact-copy {
+    max-width: 62ch;
+}
+
+.site-footer {
+    margin-top: 3rem;
+    background: #041f38;
+}
+
+.footer-inner {
+    width: min(1120px, 92vw);
+    margin: 0 auto;
+    padding: 2rem 0 2.4rem;
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) minmax(280px, 1.6fr) auto;
+    gap: 2.5rem;
+    align-items: start;
+}
+
+.footer-column {
+    display: grid;
+    gap: 1rem;
+    align-content: start;
+}
+
+.footer-column a,
+.footer-copy {
+    color: rgba(244, 248, 255, 0.95);
+    text-decoration: none;
+    font-size: clamp(1rem, 1.8vw, 1.2rem);
+    line-height: 1.35;
+}
+
+.footer-column a:hover,
+.footer-column a:focus-visible {
+    color: var(--neon);
+}
+
+.footer-copy {
+    margin: 0;
+    color: rgba(244, 248, 255, 0.62);
+    white-space: nowrap;
+}
+
 @media (max-width: 740px) {
     .header-inner {
         display: flex;
@@ -155,6 +208,19 @@ h1 {
 
     .hero-layout {
         grid-template-columns: 1fr;
+    }
+
+    .contact-page {
+        min-height: calc(100vh - 64px - 2.5rem);
+    }
+
+    .footer-inner {
+        grid-template-columns: 1fr;
+        gap: 1.6rem;
+    }
+
+    .footer-copy {
+        white-space: normal;
     }
 
 }
