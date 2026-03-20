@@ -19,29 +19,29 @@ ORDERS_FILE = DATA_DIR / "orders.json"
 
 PRODUCTS = [
     {
-        "id": "original-charge",
-        "name": "Original Charge",
-        "description": "Crisp citrus blend with fast clean energy.",
+        "id": "lemonade",
+        "name": "Lemonade flavor",
+        "description": "Carbonated lemonade Mako Energy Drink.",
         "price": 3.49,
         "currency": "USD",
         "in_stock": True,
     },
-    {
-        "id": "berry-surge",
-        "name": "Berry Surge",
-        "description": "Berry flavor with electrolytes and zero crash.",
-        "price": 3.99,
-        "currency": "USD",
-        "in_stock": True,
-    },
-    {
-        "id": "tropical-bolt",
-        "name": "Tropical Bolt",
-        "description": "Tropical fruit blend for all-day focus.",
-        "price": 4.29,
-        "currency": "USD",
-        "in_stock": True,
-    },
+    # {
+    #     "id": "berry-surge",
+    #     "name": "Berry Surge",
+    #     "description": "Berry flavor with electrolytes and zero crash.",
+    #     "price": 3.99,
+    #     "currency": "USD",
+    #     "in_stock": True,
+    # },
+    # {
+    #     "id": "tropical-bolt",
+    #     "name": "Tropical Bolt",
+    #     "description": "Tropical fruit blend for all-day focus.",
+    #     "price": 4.29,
+    #     "currency": "USD",
+    #     "in_stock": True,
+    # },
 ]
 
 PRODUCT_INDEX = {product["id"]: product for product in PRODUCTS}
