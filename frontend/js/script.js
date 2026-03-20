@@ -10,6 +10,7 @@
     const cartEmpty = document.getElementById('cart-empty');
     const clearCartButton = document.getElementById('clear-cart');
     const checkoutButton = document.getElementById('checkout-button');
+    const checkoutLink = document.getElementById('checkout-link');
     const checkoutName = document.getElementById('checkout-name');
     const checkoutEmail = document.getElementById('checkout-email');
     const checkoutPayment = document.getElementById('checkout-payment');
@@ -276,45 +277,76 @@
         `).join('');
     }
 
-    function renderCart(cart) {
-        if (!cartList || !cartTotal || !cartEmpty || !clearCartButton) {
+    function renderCart(cart, options) {
+        const {
+            listElement,
+            totalElement,
+            emptyElement,
+            clearButton,
+            checkoutAction,
+            editable
+        } = options;
+
+        if (!listElement || !totalElement || !emptyElement) {
             return;
         }
 
-        cartList.innerHTML = '';
+        listElement.innerHTML = '';
         const subtotal = getSubtotal(cart);
-        cartTotal.textContent = formatPrice(subtotal);
+        totalElement.textContent = formatPrice(subtotal);
 
         if (cart.length === 0) {
-            cartEmpty.hidden = false;
-            clearCartButton.disabled = true;
-            if (checkoutButton) {
-                checkoutButton.disabled = true;
+            emptyElement.hidden = false;
+            if (clearButton) {
+                clearButton.disabled = true;
+            }
+            if (checkoutAction instanceof HTMLButtonElement) {
+                checkoutAction.disabled = true;
+            }
+            if (checkoutAction instanceof HTMLAnchorElement) {
+                checkoutAction.setAttribute('aria-disabled', 'true');
+                checkoutAction.classList.add('is-disabled');
             }
             return;
         }
 
-        cartEmpty.hidden = true;
-        clearCartButton.disabled = false;
-        if (checkoutButton) {
-            checkoutButton.disabled = false;
+        emptyElement.hidden = true;
+        if (clearButton) {
+            clearButton.disabled = false;
+        }
+        if (checkoutAction instanceof HTMLButtonElement) {
+            checkoutAction.disabled = false;
+        }
+        if (checkoutAction instanceof HTMLAnchorElement) {
+            checkoutAction.removeAttribute('aria-disabled');
+            checkoutAction.classList.remove('is-disabled');
         }
 
         cart.forEach((item) => {
             const li = document.createElement('li');
             li.className = 'cart-item';
-            li.innerHTML = `
-                <div>
-                    <p class="cart-item-name">${item.name}</p>
-                    <p class="cart-item-meta">${formatPrice(item.unit_price)} x ${item.quantity}</p>
-                </div>
-                <div class="cart-item-actions">
-                    <button type="button" class="cart-adjust" data-action="decrease" data-id="${item.product_id}" aria-label="Decrease ${item.name}">-</button>
-                    <button type="button" class="cart-adjust" data-action="increase" data-id="${item.product_id}" aria-label="Increase ${item.name}">+</button>
-                    <button type="button" class="cart-remove" data-id="${item.product_id}" aria-label="Remove ${item.name}">Remove</button>
-                </div>
-            `;
-            cartList.appendChild(li);
+            if (editable) {
+                li.innerHTML = `
+                    <div>
+                        <p class="cart-item-name">${item.name}</p>
+                        <p class="cart-item-meta">${formatPrice(item.unit_price)} x ${item.quantity}</p>
+                    </div>
+                    <div class="cart-item-actions">
+                        <button type="button" class="cart-adjust" data-action="decrease" data-id="${item.product_id}" aria-label="Decrease ${item.name}">-</button>
+                        <button type="button" class="cart-adjust" data-action="increase" data-id="${item.product_id}" aria-label="Increase ${item.name}">+</button>
+                        <button type="button" class="cart-remove" data-id="${item.product_id}" aria-label="Remove ${item.name}">Remove</button>
+                    </div>
+                `;
+            } else {
+                li.innerHTML = `
+                    <div>
+                        <p class="cart-item-name">${item.name}</p>
+                        <p class="cart-item-meta">${formatPrice(item.unit_price)} x ${item.quantity}</p>
+                    </div>
+                    <strong>${formatPrice(item.unit_price * item.quantity)}</strong>
+                `;
+            }
+            listElement.appendChild(li);
         });
     }
 
@@ -428,41 +460,38 @@
     }
 
     async function initCartPage() {
-        if (!cartList || !cartTotal || !cartEmpty || !clearCartButton || !checkoutButton || !checkoutStatus) {
+        if (!cartList || !cartTotal || !cartEmpty || !clearCartButton || !checkoutLink || !checkoutStatus) {
             return;
         }
 
         let cart = readCart();
         updateCartCountBadge(cart);
-        renderCart(cart);
+        renderCart(cart, {
+            listElement: cartList,
+            totalElement: cartTotal,
+            emptyElement: cartEmpty,
+            clearButton: clearCartButton,
+            checkoutAction: checkoutLink,
+            editable: true
+        });
 
         try {
             await fetchProducts();
-            paymentConfig = await fetchPaymentConfig();
             cart = applyProductInfo(cart);
             writeCart(cart);
             updateCartCountBadge(cart);
-            renderCart(cart);
+            renderCart(cart, {
+                listElement: cartList,
+                totalElement: cartTotal,
+                emptyElement: cartEmpty,
+                clearButton: clearCartButton,
+                checkoutAction: checkoutLink,
+                editable: true
+            });
             setStatus(checkoutStatus, '', false);
         } catch (_error) {
-            setStatus(checkoutStatus, 'Backend offline. You can still edit cart, but checkout is unavailable.', true);
+            setStatus(checkoutStatus, 'Backend offline. You can still edit your cart.', true);
         }
-
-        if (checkoutPayment) {
-            if (!paymentConfig || !paymentConfig.enabled) {
-                const squareOption = checkoutPayment.querySelector('option[value="square"]');
-                if (squareOption) {
-                    squareOption.disabled = true;
-                }
-            }
-
-            checkoutPayment.addEventListener('change', () => {
-                setStatus(checkoutStatus, '', false);
-                updatePaymentUi();
-            });
-        }
-
-        await updatePaymentUi();
 
         cartList.addEventListener('click', (event) => {
             const target = event.target;
@@ -486,16 +515,80 @@
 
             writeCart(cart);
             updateCartCountBadge(cart);
-            renderCart(cart);
+            renderCart(cart, {
+                listElement: cartList,
+                totalElement: cartTotal,
+                emptyElement: cartEmpty,
+                clearButton: clearCartButton,
+                checkoutAction: checkoutLink,
+                editable: true
+            });
         });
 
         clearCartButton.addEventListener('click', () => {
             cart = [];
             writeCart(cart);
             updateCartCountBadge(cart);
-            renderCart(cart);
+            renderCart(cart, {
+                listElement: cartList,
+                totalElement: cartTotal,
+                emptyElement: cartEmpty,
+                clearButton: clearCartButton,
+                checkoutAction: checkoutLink,
+                editable: true
+            });
             setStatus(checkoutStatus, 'Cart cleared.', false);
         });
+    }
+
+    async function initCheckoutPage() {
+        if (!cartList || !cartTotal || !cartEmpty || !checkoutButton || !checkoutStatus) {
+            return;
+        }
+
+        let cart = readCart();
+        updateCartCountBadge(cart);
+        renderCart(cart, {
+            listElement: cartList,
+            totalElement: cartTotal,
+            emptyElement: cartEmpty,
+            checkoutAction: checkoutButton,
+            editable: false
+        });
+
+        try {
+            await fetchProducts();
+            paymentConfig = await fetchPaymentConfig();
+            cart = applyProductInfo(cart);
+            writeCart(cart);
+            updateCartCountBadge(cart);
+            renderCart(cart, {
+                listElement: cartList,
+                totalElement: cartTotal,
+                emptyElement: cartEmpty,
+                checkoutAction: checkoutButton,
+                editable: false
+            });
+            setStatus(checkoutStatus, '', false);
+        } catch (_error) {
+            setStatus(checkoutStatus, 'Backend offline. Order submission is unavailable right now.', true);
+        }
+
+        if (checkoutPayment) {
+            if (!paymentConfig || !paymentConfig.enabled) {
+                const squareOption = checkoutPayment.querySelector('option[value="square"]');
+                if (squareOption) {
+                    squareOption.disabled = true;
+                }
+            }
+
+            checkoutPayment.addEventListener('change', () => {
+                setStatus(checkoutStatus, '', false);
+                updatePaymentUi();
+            });
+        }
+
+        await updatePaymentUi();
 
         checkoutButton.addEventListener('click', async () => {
             if (cart.length === 0) {
@@ -511,7 +604,13 @@
                 cart = [];
                 writeCart(cart);
                 updateCartCountBadge(cart);
-                renderCart(cart);
+                renderCart(cart, {
+                    listElement: cartList,
+                    totalElement: cartTotal,
+                    emptyElement: cartEmpty,
+                    checkoutAction: checkoutButton,
+                    editable: false
+                });
                 if (checkoutName) {
                     checkoutName.value = '';
                 }
@@ -538,4 +637,5 @@
 
     initShopPage();
     initCartPage();
+    initCheckoutPage();
 })();

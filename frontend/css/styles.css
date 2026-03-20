@@ -437,6 +437,15 @@ h1 {
     padding: 0.6rem 1rem;
 }
 
+.checkout-link {
+    margin-top: 1rem;
+}
+
+.cart-link.is-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
 .cart-page-layout {
     margin-top: 2rem;
     display: grid;

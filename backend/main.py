@@ -20,7 +20,7 @@ ORDERS_FILE = DATA_DIR / "orders.json"
 PRODUCTS = [
     {
         "id": "lemonade",
-        "name": "Lemonade flavor",
+        "name": "Tropical Lemonade",
         "description": "Carbonated lemonade Mako Energy Drink.",
         "price": 3.49,
         "currency": "USD",

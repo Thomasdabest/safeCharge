@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mako Energy | Checkout</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-inner">
+            <a class="brand" href="../index.html" aria-label="SafeCharge Home">SafeCharge</a>
+
+            <nav class="main-nav" aria-label="Main navigation">
+                <a href="contact.html">Contact</a>
+                <a href="shop.html">Products</a>
+                <a href="cart.html">Cart (<span data-cart-count>0</span>)</a>
+                <a href="checkout.html">Checkout</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="hero">
+        <p class="kicker">CHECKOUT</p>
+        <h1>Complete Your Order</h1>
+        <p>Confirm what you ordered, then enter your details and payment method.</p>
+
+        <section class="cart-page-layout" aria-label="Checkout">
+            <aside class="cart-panel" aria-label="Order summary">
+                <h2>Order Summary</h2>
+                <ul id="cart-items" class="cart-items"></ul>
+                <p id="cart-empty" class="cart-empty">Your cart is empty. Add items before checking out.</p>
+                <div class="cart-total-row">
+                    <span>Total</span>
+                    <strong id="cart-total">$0.00</strong>
+                </div>
+                <a class="cart-link checkout-link" href="cart.html">Back to Cart</a>
+            </aside>
+
+            <section class="cart-panel" aria-label="Checkout details">
+                <h2>Customer</h2>
+                <label class="checkout-label" for="checkout-name">Name</label>
+                <input id="checkout-name" class="checkout-input" type="text" placeholder="Your name">
+                <label class="checkout-label" for="checkout-email">Email</label>
+                <input id="checkout-email" class="checkout-input" type="email" placeholder="you@email.com">
+                <label class="checkout-label" for="checkout-payment">Payment</label>
+                <select id="checkout-payment" class="checkout-input">
+                    <option value="card">Card</option>
+                    <option value="square">Square</option>
+                    <option value="paypal">PayPal</option>
+                    <option value="cash">Cash</option>
+                </select>
+                <div id="square-payment-panel" class="square-payment-panel" hidden>
+                    <p class="square-payment-copy">Enter your card details securely with Square.</p>
+                    <div id="square-card" class="square-card-container"></div>
+                </div>
+                <button id="checkout-button" type="button" class="checkout-button">Place Order</button>
+                <p id="checkout-status" class="checkout-status" aria-live="polite"></p>
+            </section>
+        </section>
+    </main>
+
+    <script src="../js/script.js" defer></script>
+</body>
+</html>
