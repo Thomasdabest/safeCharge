@@ -20,7 +20,11 @@ body {
     flex-direction: column;
     font-family: 'Barlow Condensed', 'Franklin Gothic Medium', sans-serif;
     color: var(--text);
-    background: linear-gradient(135deg, #000dff 0%, #00ffbb 100%);
+    background: linear-gradient(135deg, #58e1e1 0%, #0dbcff 50%, #00182e 100%);
+}
+
+main {
+    flex: 1;
 }
 
 .site-header {
@@ -29,7 +33,7 @@ body {
     z-index: 10;
     border-bottom: 1px solid rgba(255, 255, 255, 0.14);
     backdrop-filter: blur(9px);
-    background: linear-gradient(135deg, #000dff 0%, #00ffbb 100%);
+    background: linear-gradient(135deg, #58e1e1 0%, #0dbcff 50%, #00182e 100%);
 }
 
 .header-inner {
@@ -155,10 +159,10 @@ h1 {
     width: min(1120px, 92vw);
     margin: 0 auto;
     padding: 2rem 0 2.4rem;
-    display: grid;
-    grid-template-columns: minmax(180px, 1fr) minmax(280px, 1.6fr) auto;
-    gap: 2.5rem;
-    align-items: start;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
 }
 
 .footer-column {
@@ -215,7 +219,8 @@ h1 {
     }
 
     .footer-inner {
-        grid-template-columns: 1fr;
+        flex-direction: column;
+        align-items: flex-start;
         gap: 1.6rem;
     }
 
