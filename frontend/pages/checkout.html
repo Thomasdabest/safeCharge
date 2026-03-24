@@ -9,13 +9,11 @@
 <body>
     <header class="site-header">
         <div class="header-inner">
-            <a class="brand" href="../index.html" aria-label="SafeCharge Home">SafeCharge</a>
+            <a class="brand" href="../index.html" aria-label="Mako Energy Home">Mako Energy</a>
 
             <nav class="main-nav" aria-label="Main navigation">
-                <a href="contact.html">Contact</a>
                 <a href="shop.html">Products</a>
                 <a href="cart.html">Cart (<span data-cart-count>0</span>)</a>
-                <a href="checkout.html">Checkout</a>
             </nav>
         </div>
     </header>
@@ -23,42 +21,63 @@
     <main class="hero">
         <p class="kicker">CHECKOUT</p>
         <h1>Complete Your Order</h1>
-        <p>Confirm what you ordered, then enter your details and payment method.</p>
+        <p>Review your items, enter your details, choose a payment method, and place the order.</p>
 
         <section class="cart-page-layout" aria-label="Checkout">
             <aside class="cart-panel" aria-label="Order summary">
                 <h2>Order Summary</h2>
                 <ul id="cart-items" class="cart-items"></ul>
-                <p id="cart-empty" class="cart-empty">Your cart is empty. Add items before checking out.</p>
+                <p id="cart-empty" class="cart-empty">Your cart is empty.</p>
                 <div class="cart-total-row">
-                    <span>Total</span>
+                    <span>Subtotal</span>
                     <strong id="cart-total">$0.00</strong>
                 </div>
-                <a class="cart-link checkout-link" href="cart.html">Back to Cart</a>
+                <p class="cart-item-meta">Tax is added when the order is submitted.</p>
             </aside>
 
-            <section class="cart-panel" aria-label="Checkout details">
-                <h2>Customer</h2>
-                <label class="checkout-label" for="checkout-name">Name</label>
-                <input id="checkout-name" class="checkout-input" type="text" placeholder="Your name">
-                <label class="checkout-label" for="checkout-email">Email</label>
-                <input id="checkout-email" class="checkout-input" type="email" placeholder="you@email.com">
-                <label class="checkout-label" for="checkout-payment">Payment</label>
-                <select id="checkout-payment" class="checkout-input">
-                    <option value="card">Card</option>
-                    <option value="square">Square</option>
-                    <option value="paypal">PayPal</option>
-                    <option value="cash">Cash</option>
-                </select>
+            <section class="cart-panel" aria-label="Customer details">
+                <h2>Customer Details</h2>
+
+                <label class="checkout-label" for="checkout-name">
+                    Full Name
+                    <input id="checkout-name" class="checkout-input" type="text" name="name" autocomplete="name" placeholder="Jane Doe">
+                </label>
+
+                <label class="checkout-label" for="checkout-email">
+                    Email
+                    <input id="checkout-email" class="checkout-input" type="email" name="email" autocomplete="email" placeholder="jane@example.com">
+                </label>
+
+                <label class="checkout-label" for="checkout-payment">
+                    Payment Method
+                    <select id="checkout-payment" class="checkout-input" name="payment_method">
+                        <option value="card">Card on Delivery</option>
+                        <option value="cash">Cash</option>
+                        <option value="paypal">PayPal</option>
+                        <option value="square">Square Card</option>
+                    </select>
+                </label>
+
                 <div id="square-payment-panel" class="square-payment-panel" hidden>
-                    <p class="square-payment-copy">Enter your card details securely with Square.</p>
+                    <p class="square-payment-copy">Enter your card details for Square payment.</p>
                     <div id="square-card" class="square-card-container"></div>
                 </div>
+
                 <button id="checkout-button" type="button" class="checkout-button">Place Order</button>
                 <p id="checkout-status" class="checkout-status" aria-live="polite"></p>
             </section>
         </section>
     </main>
+
+    <footer class="site-footer" aria-label="Footer">
+        <div class="footer-inner">
+            <div class="footer-column">
+                <a href="contact.html">Contact Us</a>
+            </div>
+
+            <p class="footer-copy">&copy; 2026 SafeCharge</p>
+        </div>
+    </footer>
 
     <script src="../js/script.js" defer></script>
 </body>
