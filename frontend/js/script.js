@@ -24,7 +24,7 @@
     let squareCard = null;
     let squareCardReady = false;
     let squareScriptPromise = null;
-
+    
     function normalizeCart(rawItems) {
         if (!Array.isArray(rawItems)) {
             return [];
@@ -133,6 +133,33 @@
                 unit_price: Number(liveProduct.price)
             };
         });
+    }
+
+    function syncCartWithCatalog(cart) {
+        const normalizedCart = normalizeCart(cart);
+
+        if (!Object.keys(productsById).length) {
+            return { cart: normalizedCart, removedCount: 0 };
+        }
+
+        const syncedCart = [];
+        let removedCount = 0;
+
+        normalizedCart.forEach((item) => {
+            const liveProduct = productsById[item.product_id];
+            if (!liveProduct || liveProduct.in_stock === false) {
+                removedCount += item.quantity;
+                return;
+            }
+
+            syncedCart.push({
+                ...item,
+                name: liveProduct.name,
+                unit_price: Number(liveProduct.price)
+            });
+        });
+
+        return { cart: syncedCart, removedCount };
     }
 
     async function fetchProducts() {
@@ -430,6 +457,10 @@
             throw new Error('Enter your name and email to checkout.');
         }
 
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            throw new Error('Enter a valid email address.');
+        }
+
         let sourceId = null;
         if (paymentMethod === 'square') {
             sourceId = await tokenizeSquareCard();
@@ -477,7 +508,8 @@
 
         try {
             await fetchProducts();
-            cart = applyProductInfo(cart);
+            const syncResult = syncCartWithCatalog(cart);
+            cart = syncResult.cart;
             writeCart(cart);
             updateCartCountBadge(cart);
             renderCart(cart, {
@@ -488,7 +520,11 @@
                 checkoutAction: checkoutLink,
                 editable: true
             });
-            setStatus(checkoutStatus, '', false);
+            if (syncResult.removedCount > 0) {
+                setStatus(checkoutStatus, 'Unavailable items were removed from your cart.', true);
+            } else {
+                setStatus(checkoutStatus, '', false);
+            }
         } catch (_error) {
             setStatus(checkoutStatus, 'Backend offline. You can still edit your cart.', true);
         }
@@ -547,6 +583,7 @@
         }
 
         let cart = readCart();
+        let checkoutAvailable = false;
         updateCartCountBadge(cart);
         renderCart(cart, {
             listElement: cartList,
@@ -558,8 +595,8 @@
 
         try {
             await fetchProducts();
-            paymentConfig = await fetchPaymentConfig();
-            cart = applyProductInfo(cart);
+            const syncResult = syncCartWithCatalog(cart);
+            cart = syncResult.cart;
             writeCart(cart);
             updateCartCountBadge(cart);
             renderCart(cart, {
@@ -569,9 +606,21 @@
                 checkoutAction: checkoutButton,
                 editable: false
             });
-            setStatus(checkoutStatus, '', false);
+            checkoutAvailable = true;
+            if (syncResult.removedCount > 0) {
+                setStatus(checkoutStatus, 'Unavailable items were removed from your cart before checkout.', true);
+            } else {
+                setStatus(checkoutStatus, '', false);
+            }
         } catch (_error) {
             setStatus(checkoutStatus, 'Backend offline. Order submission is unavailable right now.', true);
+            checkoutButton.disabled = true;
+        }
+
+        try {
+            paymentConfig = await fetchPaymentConfig();
+        } catch (_error) {
+            paymentConfig = null;
         }
 
         if (checkoutPayment) {
@@ -591,6 +640,11 @@
         await updatePaymentUi();
 
         checkoutButton.addEventListener('click', async () => {
+            if (!checkoutAvailable) {
+                setStatus(checkoutStatus, 'Order submission is unavailable until the backend is online.', true);
+                return;
+            }
+
             if (cart.length === 0) {
                 setStatus(checkoutStatus, 'Add at least one item before checkout.', true);
                 return;

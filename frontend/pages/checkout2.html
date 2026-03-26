@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>SafeCharge | PayPal Checkout</title>
+        <link rel="stylesheet" href="../css/styles.css" />
+    </head>
+    <body>
+        <header class="site-header">
+            <div class="header-inner">
+                <a class="brand" href="../index.html" aria-label="SafeCharge Home">SafeCharge</a>
+
+                <nav class="main-nav" aria-label="Main navigation">
+                    <a href="shop.html">Products</a>
+                    <a href="cart.html">Cart</a>
+                    <a href="checkout.html">Checkout</a>
+                </nav>
+            </div>
+        </header>
+
+        <main class="hero">
+            <p class="kicker">PAYPAL</p>
+            <h1>Pay With PayPal</h1>
+            <p>Use the items currently in your cart to create and capture a PayPal sandbox order.</p>
+
+            <section class="cart-page-layout" aria-label="PayPal checkout">
+                <aside class="cart-panel" aria-label="Cart summary">
+                    <h2>Cart Summary</h2>
+                    <ul id="paypal-cart-items" class="cart-items"></ul>
+                    <p id="paypal-cart-empty" class="cart-empty">Your cart is empty.</p>
+                    <div class="cart-total-row">
+                        <span>Subtotal</span>
+                        <strong id="paypal-cart-total">$0.00</strong>
+                    </div>
+                </aside>
+
+                <section class="cart-panel" aria-label="PayPal actions">
+                    <h2>Complete Payment</h2>
+                    <div id="paypal-button-container"></div>
+                    <p id="result-message" class="checkout-status" aria-live="polite"></p>
+                </section>
+            </section>
+        </main>
+
+        <footer class="site-footer" aria-label="Footer">
+            <div class="footer-inner">
+                <div class="footer-column">
+                    <a href="contact.html">Contact Us</a>
+                </div>
+
+                <p class="footer-copy">&copy; 2026 SafeCharge</p>
+            </div>
+        </footer>
+
+        <script
+            src="https://www.paypal.com/sdk/js?client-id=AU4SZhu8Ebj_m5tHLA96serhnMgdVtcbHrSAjDk_KrSUAqQKJ8dp6NezTGM1pGUVAbWhtAgjWCIg7fWA&buyer-country=US&currency=USD&components=buttons&enable-funding=venmo,paylater,card"
+            data-sdk-integration-source="developer-studio"
+        ></script>
+        <script src="../js/paypal-checkout.js" defer></script>
+    </body>
+</html>
