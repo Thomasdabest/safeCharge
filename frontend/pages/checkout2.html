@@ -20,9 +20,9 @@
         </header>
 
         <main class="hero">
-            <p class="kicker">PAYPAL</p>
-            <h1>Pay With PayPal</h1>
-            <p>Use the items currently in your cart to create and capture a PayPal sandbox order.</p>
+            <p class="kicker">CHECKOUT</p>
+            <h1>Complete Your Order</h1>
+            <p>Pay securely with your card or PayPal account.</p>
 
             <section class="cart-page-layout" aria-label="PayPal checkout">
                 <aside class="cart-panel" aria-label="Cart summary">
@@ -35,10 +35,108 @@
                     </div>
                 </aside>
 
-                <section class="cart-panel" aria-label="PayPal actions">
-                    <h2>Complete Payment</h2>
+                <section class="cart-panel" aria-label="Payment">
+                    <!-- Customer Info -->
+                    <h2>Your Information</h2>
+                    <div class="card-form" id="customer-info-form">
+                        <div class="card-field-group">
+                            <label class="checkout-label" for="customer-name">Full Name</label>
+                            <input type="text" id="customer-name" class="checkout-input" placeholder="John Doe" required />
+                        </div>
+                        <div class="card-field-group">
+                            <label class="checkout-label" for="customer-email">Email (for receipt)</label>
+                            <input type="email" id="customer-email" class="checkout-input" placeholder="you@example.com" required />
+                        </div>
+                        <div class="card-field-group">
+                            <label class="checkout-label" for="customer-phone">Phone Number</label>
+                            <input type="tel" id="customer-phone" class="checkout-input" placeholder="(555) 123-4567" required />
+                        </div>
+                        <div class="card-field-group">
+                            <label class="checkout-label" for="customer-address">Street Address</label>
+                            <input type="text" id="customer-address" class="checkout-input" placeholder="123 Main St, Apt 4" required />
+                        </div>
+                        <div class="checkout-address-row">
+                            <div class="card-field-group">
+                                <label class="checkout-label" for="customer-city">City</label>
+                                <input type="text" id="customer-city" class="checkout-input" placeholder="Los Angeles" required />
+                            </div>
+                            <div class="card-field-group">
+                                <label class="checkout-label" for="customer-state">State</label>
+                                <select id="customer-state" class="checkout-input checkout-select">
+                                    <option value="">State</option>
+                                    <option value="AL">AL</option><option value="AK">AK</option><option value="AZ">AZ</option>
+                                    <option value="AR">AR</option><option value="CA">CA</option><option value="CO">CO</option>
+                                    <option value="CT">CT</option><option value="DE">DE</option><option value="FL">FL</option>
+                                    <option value="GA">GA</option><option value="HI">HI</option><option value="ID">ID</option>
+                                    <option value="IL">IL</option><option value="IN">IN</option><option value="IA">IA</option>
+                                    <option value="KS">KS</option><option value="KY">KY</option><option value="LA">LA</option>
+                                    <option value="ME">ME</option><option value="MD">MD</option><option value="MA">MA</option>
+                                    <option value="MI">MI</option><option value="MN">MN</option><option value="MS">MS</option>
+                                    <option value="MO">MO</option><option value="MT">MT</option><option value="NE">NE</option>
+                                    <option value="NV">NV</option><option value="NH">NH</option><option value="NJ">NJ</option>
+                                    <option value="NM">NM</option><option value="NY">NY</option><option value="NC">NC</option>
+                                    <option value="ND">ND</option><option value="OH">OH</option><option value="OK">OK</option>
+                                    <option value="OR">OR</option><option value="PA">PA</option><option value="RI">RI</option>
+                                    <option value="SC">SC</option><option value="SD">SD</option><option value="TN">TN</option>
+                                    <option value="TX">TX</option><option value="UT">UT</option><option value="VT">VT</option>
+                                    <option value="VA">VA</option><option value="WA">WA</option><option value="WV">WV</option>
+                                    <option value="WI">WI</option><option value="WY">WY</option><option value="DC">DC</option>
+                                </select>
+                            </div>
+                            <div class="card-field-group">
+                                <label class="checkout-label" for="customer-zip">ZIP</label>
+                                <input type="text" id="customer-zip" class="checkout-input" placeholder="90001" maxlength="10" required />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Payment -->
+                    <h2 style="margin-top: 1.5rem;">Pay with Card</h2>
+
+                    <div id="card-form" class="card-form">
+                        <div class="card-field-group">
+                            <label class="checkout-label" for="card-name-field">Cardholder Name</label>
+                            <div id="card-name-field" class="card-field"></div>
+                        </div>
+
+                        <div class="card-field-group">
+                            <label class="checkout-label" for="card-number-field">Card Number</label>
+                            <div id="card-number-field" class="card-field"></div>
+                        </div>
+
+                        <div class="card-field-row">
+                            <div class="card-field-group">
+                                <label class="checkout-label" for="card-expiry-field">Expiry</label>
+                                <div id="card-expiry-field" class="card-field"></div>
+                            </div>
+                            <div class="card-field-group">
+                                <label class="checkout-label" for="card-cvv-field">CVV</label>
+                                <div id="card-cvv-field" class="card-field"></div>
+                            </div>
+                        </div>
+
+                        <button type="button" id="card-submit" class="checkout-button" disabled>
+                            Pay Now
+                        </button>
+                    </div>
+
+                    <div class="paypal-divider">
+                        <span>or</span>
+                    </div>
+
                     <div id="paypal-button-container"></div>
+
                     <p id="result-message" class="checkout-status" aria-live="polite"></p>
+
+                    <!-- Order Confirmation (hidden until payment succeeds) -->
+                    <div id="order-confirmation" class="order-confirmation" hidden>
+                        <div class="confirmation-icon">&#10003;</div>
+                        <h2>Order Confirmed!</h2>
+                        <p id="confirmation-message"></p>
+                        <div id="confirmation-details" class="confirmation-details"></div>
+                        <p class="confirmation-receipt">A receipt has been sent to <strong id="confirmation-email"></strong></p>
+                        <a href="shop.html" class="checkout-button" style="display:inline-block; text-align:center; margin-top:1rem;">Continue Shopping</a>
+                    </div>
                 </section>
             </section>
         </main>
@@ -53,10 +151,6 @@
             </div>
         </footer>
 
-        <script
-            src="https://www.paypal.com/sdk/js?client-id=AU4SZhu8Ebj_m5tHLA96serhnMgdVtcbHrSAjDk_KrSUAqQKJ8dp6NezTGM1pGUVAbWhtAgjWCIg7fWA&buyer-country=US&currency=USD&components=buttons&enable-funding=venmo,paylater,card"
-            data-sdk-integration-source="developer-studio"
-        ></script>
-        <script src="../js/paypal-checkout.js" defer></script>
+        <script src="../js/paypal-checkout.js"></script>
     </body>
 </html>

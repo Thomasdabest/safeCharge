@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>SafeCharge | Admin Dashboard</title>
+        <link rel="stylesheet" href="../css/styles.css" />
+        <link rel="stylesheet" href="../css/admin.css" />
+    </head>
+    <body>
+        <header class="site-header">
+            <div class="header-inner">
+                <a class="brand" href="../index.html" aria-label="SafeCharge Home">SafeCharge</a>
+                <nav class="main-nav" aria-label="Admin navigation">
+                    <span class="admin-badge">Admin</span>
+                    <button id="logout-btn" class="admin-logout-btn" hidden>Logout</button>
+                </nav>
+            </div>
+        </header>
+
+        <main class="hero">
+            <!-- Login Screen -->
+            <section id="login-section" class="admin-login-section">
+                <div class="admin-login-card">
+                    <h1>Admin Login</h1>
+                    <p>Enter your credentials to manage orders.</p>
+                    <form id="login-form" class="admin-login-form">
+                        <div class="card-field-group">
+                            <label class="checkout-label" for="admin-username">Username</label>
+                            <input type="text" id="admin-username" class="checkout-input" placeholder="admin" autocomplete="username" required />
+                        </div>
+                        <div class="card-field-group">
+                            <label class="checkout-label" for="admin-password">Password</label>
+                            <input type="password" id="admin-password" class="checkout-input" placeholder="Password" autocomplete="current-password" required />
+                        </div>
+                        <p id="login-error" class="admin-error" hidden></p>
+                        <button type="submit" class="checkout-button">Sign In</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Dashboard (hidden until logged in) -->
+            <section id="dashboard-section" hidden>
+                <p class="kicker">DASHBOARD</p>
+                <h1>Order Management</h1>
+
+                <!-- Stats Row -->
+                <div class="admin-stats">
+                    <div class="admin-stat-card">
+                        <span class="admin-stat-number" id="stat-total">0</span>
+                        <span class="admin-stat-label">Total Orders</span>
+                    </div>
+                    <div class="admin-stat-card">
+                        <span class="admin-stat-number" id="stat-pending">0</span>
+                        <span class="admin-stat-label">Pending</span>
+                    </div>
+                    <div class="admin-stat-card">
+                        <span class="admin-stat-number" id="stat-shipped">0</span>
+                        <span class="admin-stat-label">Shipped</span>
+                    </div>
+                    <div class="admin-stat-card">
+                        <span class="admin-stat-number" id="stat-delivered">0</span>
+                        <span class="admin-stat-label">Delivered</span>
+                    </div>
+                    <div class="admin-stat-card">
+                        <span class="admin-stat-number" id="stat-revenue">$0</span>
+                        <span class="admin-stat-label">Revenue</span>
+                    </div>
+                </div>
+
+                <!-- Orders Table -->
+                <div class="admin-table-wrap">
+                    <table class="admin-table" id="orders-table">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Order ID</th>
+                                <th>Date</th>
+                                <th>Customer</th>
+                                <th>Items</th>
+                                <th>Total</th>
+                                <th>Payment</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-body"></tbody>
+                    </table>
+                    <p id="no-orders" class="admin-empty" hidden>No orders yet.</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- Ship Modal -->
+        <div id="ship-modal" class="admin-modal" hidden>
+            <div class="admin-modal-content">
+                <h2>Mark as Shipped</h2>
+                <p>Order: <strong id="ship-order-id"></strong></p>
+                <div class="card-field-group">
+                    <label class="checkout-label" for="tracking-input">Tracking Number</label>
+                    <input type="text" id="tracking-input" class="checkout-input" placeholder="e.g. 1Z999AA10123456784" />
+                </div>
+                <div class="admin-modal-actions">
+                    <button id="ship-confirm" class="checkout-button">Confirm Shipment</button>
+                    <button id="ship-cancel" class="admin-cancel-btn">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <footer class="site-footer" aria-label="Footer">
+            <div class="footer-inner">
+                <p class="footer-copy">&copy; 2026 SafeCharge Admin</p>
+            </div>
+        </footer>
+
+        <script src="../js/admin.js"></script>
+    </body>
+</html>

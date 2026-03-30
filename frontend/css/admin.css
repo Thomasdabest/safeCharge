@@ -1,0 +1,367 @@
+/* ── Admin Login ───────────────────────────────────────────────── */
+
+.admin-login-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 50vh;
+    padding: 2rem 1rem;
+}
+
+.admin-login-card {
+    width: min(420px, 92vw);
+    padding: 2rem;
+    border-radius: 16px;
+    background: rgba(0, 10, 25, 0.55);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    text-align: center;
+}
+
+.admin-login-card h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.6rem;
+    margin: 0 0 0.5rem;
+}
+
+.admin-login-card p {
+    color: var(--muted);
+    margin: 0 0 1.5rem;
+}
+
+.admin-login-form {
+    text-align: left;
+}
+
+.admin-login-form .checkout-button {
+    width: 100%;
+    margin-top: 1.2rem;
+}
+
+.admin-error {
+    color: #ff6b8a;
+    font-size: 0.9rem;
+    margin: 0.6rem 0 0;
+    text-align: center;
+}
+
+.admin-badge {
+    padding: 0.25rem 0.7rem;
+    border-radius: 6px;
+    background: rgba(141, 255, 47, 0.15);
+    color: var(--neon);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.admin-logout-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: var(--text);
+    padding: 0.3rem 0.8rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.85rem;
+}
+
+.admin-logout-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* ── Stats ─────────────────────────────────────────────────────── */
+
+.admin-stats {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 1.5rem auto 2rem;
+    max-width: 900px;
+}
+
+.admin-stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    background: rgba(0, 10, 25, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    min-width: 120px;
+}
+
+.admin-stat-number {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--neon);
+}
+
+.admin-stat-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-top: 0.2rem;
+}
+
+/* ── Table ─────────────────────────────────────────────────────── */
+
+.admin-table-wrap {
+    width: min(1200px, 96vw);
+    margin: 0 auto 3rem;
+    overflow-x: auto;
+    border-radius: 12px;
+    background: rgba(0, 10, 25, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.admin-table thead th {
+    padding: 0.75rem 0.8rem;
+    text-align: left;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    white-space: nowrap;
+}
+
+.admin-table tbody td {
+    padding: 0.7rem 0.8rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    vertical-align: middle;
+}
+
+.admin-order-row:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.admin-order-id {
+    font-family: monospace;
+    font-size: 0.82rem;
+    color: var(--ice);
+}
+
+.admin-items-cell {
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.admin-actions-cell {
+    white-space: nowrap;
+}
+
+.admin-expand-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 0.3rem;
+    transition: transform 0.15s;
+}
+
+.admin-expand-btn.expanded {
+    color: var(--neon);
+}
+
+/* ── Status Badges ─────────────────────────────────────────────── */
+
+.admin-badge-status {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.badge-pending {
+    background: rgba(255, 200, 0, 0.18);
+    color: #ffc800;
+}
+
+.badge-shipped {
+    background: rgba(0, 160, 255, 0.18);
+    color: #4db8ff;
+}
+
+.badge-delivered {
+    background: rgba(0, 220, 100, 0.18);
+    color: #3ddc84;
+}
+
+/* ── Action Buttons ────────────────────────────────────────────── */
+
+.admin-action-btn {
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+    border: none;
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.admin-action-btn:hover {
+    opacity: 0.85;
+}
+
+.admin-ship-btn {
+    background: #4db8ff;
+    color: #000;
+}
+
+.admin-deliver-btn {
+    background: #3ddc84;
+    color: #000;
+}
+
+.admin-done {
+    color: #3ddc84;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+/* ── Detail Row ────────────────────────────────────────────────── */
+
+.admin-detail-row td {
+    padding: 0 !important;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.admin-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.2rem;
+    padding: 1.2rem;
+}
+
+.admin-detail-section h4 {
+    margin: 0 0 0.4rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--neon);
+}
+
+.admin-detail-section p {
+    margin: 0.15rem 0;
+    font-size: 0.88rem;
+    color: var(--ice);
+}
+
+.admin-detail-totals {
+    margin-top: 0.6rem !important;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.85rem !important;
+}
+
+.admin-detail-meta {
+    margin-top: 0.4rem !important;
+    font-size: 0.78rem !important;
+    color: var(--muted) !important;
+    font-family: monospace;
+}
+
+/* ── Modal ─────────────────────────────────────────────────────── */
+
+.admin-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+.admin-modal-content {
+    width: min(440px, 92vw);
+    padding: 2rem;
+    border-radius: 16px;
+    background: #111823;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.admin-modal-content h2 {
+    margin: 0 0 0.5rem;
+    font-family: 'Orbitron', monospace;
+}
+
+.admin-modal-content p {
+    color: var(--muted);
+    margin: 0 0 1rem;
+}
+
+.admin-modal-actions {
+    display: flex;
+    gap: 0.8rem;
+    margin-top: 1.2rem;
+}
+
+.admin-modal-actions .checkout-button {
+    flex: 1;
+}
+
+.admin-cancel-btn {
+    flex: 1;
+    padding: 0.65rem 1rem;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+}
+
+.admin-cancel-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.admin-empty {
+    text-align: center;
+    padding: 2rem;
+    color: var(--muted);
+}
+
+/* ── Responsive ────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+    .admin-stats {
+        gap: 0.6rem;
+    }
+
+    .admin-stat-card {
+        min-width: 90px;
+        padding: 0.7rem 0.9rem;
+    }
+
+    .admin-stat-number {
+        font-size: 1.2rem;
+    }
+
+    .admin-table {
+        font-size: 0.8rem;
+    }
+
+    .admin-detail-grid {
+        grid-template-columns: 1fr;
+    }
+}

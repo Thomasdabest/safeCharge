@@ -1,21 +1,28 @@
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 import os
+import time
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Optional
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 ORDERS_FILE = DATA_DIR / "orders.json"
+
+ADMIN_USER = os.getenv("ADMIN_USER", "admin")
+ADMIN_PASS = os.getenv("ADMIN_PASS", "safecharge2026")
+ADMIN_SECRET = os.getenv("ADMIN_SECRET", "sc-secret-key-change-me")
 
 PRODUCTS = [
     {
@@ -55,6 +62,11 @@ class OrderItemIn(BaseModel):
 class CustomerIn(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     email: str = Field(min_length=3, max_length=200)
+    phone: str = Field(default="", max_length=30)
+    address: str = Field(default="", max_length=300)
+    city: str = Field(default="", max_length=100)
+    state: str = Field(default="", max_length=50)
+    zip: str = Field(default="", max_length=20)
 
 
 class OrderIn(BaseModel):
@@ -62,6 +74,16 @@ class OrderIn(BaseModel):
     customer: CustomerIn
     payment_method: Literal["card", "cash", "paypal", "square"] = "card"
     source_id: str | None = Field(default=None, min_length=1)
+
+
+class AdminLoginIn(BaseModel):
+    username: str
+    password: str
+
+
+class FulfillmentUpdateIn(BaseModel):
+    fulfillment_status: Literal["pending", "shipped", "delivered"]
+    tracking_number: Optional[str] = None
 
 
 app = FastAPI(title="SafeCharge Store API", version="1.0.0")
@@ -74,6 +96,46 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# ── Admin auth helpers ─────────────────────────────────────────────────────────
+
+def _create_admin_token(username: str) -> str:
+    """Create a simple HMAC token: username.timestamp.signature"""
+    ts = str(int(time.time()))
+    payload = f"{username}.{ts}"
+    sig = hmac.new(ADMIN_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()
+    return f"{payload}.{sig}"
+
+
+def _verify_admin_token(token: str) -> bool:
+    """Verify an admin token. Tokens expire after 24 hours."""
+    parts = token.split(".")
+    if len(parts) != 3:
+        return False
+    username, ts, sig = parts
+    try:
+        token_time = int(ts)
+    except ValueError:
+        return False
+
+    # Check expiry (24 hours)
+    if time.time() - token_time > 86400:
+        return False
+
+    expected_payload = f"{username}.{ts}"
+    expected_sig = hmac.new(ADMIN_SECRET.encode(), expected_payload.encode(), hashlib.sha256).hexdigest()
+    return hmac.compare_digest(sig, expected_sig)
+
+
+def _require_admin(authorization: str | None) -> None:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Admin authentication required.")
+    token = authorization[7:]
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="Invalid or expired admin token.")
+
+
+# ── Data helpers ───────────────────────────────────────────────────────────────
 
 def _ensure_orders_file() -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -98,6 +160,8 @@ def _write_orders(orders: list[dict]) -> None:
     with ORDERS_FILE.open("w", encoding="utf-8") as f:
         json.dump(orders, f, indent=2)
 
+
+# ── Square helpers ─────────────────────────────────────────────────────────────
 
 def _square_config() -> dict:
     environment = os.getenv("SQUARE_ENVIRONMENT", "sandbox").strip().lower() or "sandbox"
@@ -191,6 +255,8 @@ def _create_square_payment(order_record: dict, order: OrderIn, total: float) -> 
     return payment
 
 
+# ── Public endpoints ───────────────────────────────────────────────────────────
+
 @app.get("/health")
 def health() -> dict:
     return {"ok": True}
@@ -246,6 +312,11 @@ def create_order(order: OrderIn) -> dict:
         "customer": {
             "name": order.customer.name,
             "email": order.customer.email,
+            "phone": order.customer.phone,
+            "address": order.customer.address,
+            "city": order.customer.city,
+            "state": order.customer.state,
+            "zip": order.customer.zip,
         },
         "payment_method": order.payment_method,
         "items": normalized_items,
@@ -254,6 +325,8 @@ def create_order(order: OrderIn) -> dict:
         "total": total,
         "currency": "USD",
         "status": "created",
+        "fulfillment_status": "pending",
+        "tracking_number": "",
     }
 
     if order.payment_method == "square":
@@ -272,6 +345,46 @@ def create_order(order: OrderIn) -> dict:
     }
 
 
+# ── Admin endpoints ────────────────────────────────────────────────────────────
+
+@app.post("/api/admin/login")
+def admin_login(body: AdminLoginIn) -> dict:
+    if body.username != ADMIN_USER or body.password != ADMIN_PASS:
+        raise HTTPException(status_code=401, detail="Invalid username or password.")
+    token = _create_admin_token(body.username)
+    return {"token": token, "message": "Login successful."}
+
+
+@app.get("/api/admin/orders")
+def admin_list_orders(authorization: str | None = Header(default=None)) -> dict:
+    _require_admin(authorization)
+    orders = _read_orders()
+    # Return newest first
+    orders.reverse()
+    return {"orders": orders}
+
+
+@app.patch("/api/admin/orders/{order_id}")
+def admin_update_order(
+    order_id: str,
+    body: FulfillmentUpdateIn,
+    authorization: str | None = Header(default=None),
+) -> dict:
+    _require_admin(authorization)
+    orders = _read_orders()
+
+    for order in orders:
+        if order.get("id") == order_id:
+            order["fulfillment_status"] = body.fulfillment_status
+            if body.tracking_number is not None:
+                order["tracking_number"] = body.tracking_number
+            _write_orders(orders)
+            return {"message": "Order updated", "order": order}
+
+    raise HTTPException(status_code=404, detail=f"Order not found: {order_id}")
+
+
+# Keep the old public endpoint working for backwards compatibility
 @app.get("/api/orders")
 def list_orders() -> dict:
     return {"orders": _read_orders()}

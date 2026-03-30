@@ -1,12 +1,29 @@
 (function () {
     const STORAGE_KEY = 'safecharge_cart_v2';
     const PAYPAL_API_BASE = 'http://127.0.0.1:8080';
+    const BACKEND_API_BASE = 'http://127.0.0.1:8000';
 
     const cartList = document.getElementById('paypal-cart-items');
     const cartEmpty = document.getElementById('paypal-cart-empty');
     const cartTotal = document.getElementById('paypal-cart-total');
     const result = document.getElementById('result-message');
     const buttonContainer = document.getElementById('paypal-button-container');
+    const cardForm = document.getElementById('card-form');
+    const cardSubmit = document.getElementById('card-submit');
+    const customerInfoForm = document.getElementById('customer-info-form');
+    const orderConfirmation = document.getElementById('order-confirmation');
+    const confirmationMessage = document.getElementById('confirmation-message');
+    const confirmationDetails = document.getElementById('confirmation-details');
+    const confirmationEmail = document.getElementById('confirmation-email');
+
+    // Customer input elements
+    const customerNameInput = document.getElementById('customer-name');
+    const customerEmailInput = document.getElementById('customer-email');
+    const customerPhoneInput = document.getElementById('customer-phone');
+    const customerAddressInput = document.getElementById('customer-address');
+    const customerCityInput = document.getElementById('customer-city');
+    const customerStateInput = document.getElementById('customer-state');
+    const customerZipInput = document.getElementById('customer-zip');
 
     function normalizeCart(rawItems) {
         if (!Array.isArray(rawItems)) {
@@ -60,6 +77,7 @@
             return;
         }
 
+        result.hidden = false;
         result.textContent = message;
         result.dataset.error = isError ? 'true' : 'false';
     }
@@ -97,12 +115,94 @@
         });
     }
 
+    function getCustomerInfo() {
+        return {
+            name: (customerNameInput?.value || '').trim(),
+            email: (customerEmailInput?.value || '').trim(),
+            phone: (customerPhoneInput?.value || '').trim(),
+            address: (customerAddressInput?.value || '').trim(),
+            city: (customerCityInput?.value || '').trim(),
+            state: (customerStateInput?.value || '').trim(),
+            zip: (customerZipInput?.value || '').trim(),
+        };
+    }
+
+    function validateCustomerInfo() {
+        const info = getCustomerInfo();
+
+        if (!info.name) {
+            setResult('Please enter your full name.', true);
+            customerNameInput?.focus();
+            return false;
+        }
+
+        if (!info.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(info.email)) {
+            setResult('Please enter a valid email address.', true);
+            customerEmailInput?.focus();
+            return false;
+        }
+
+        if (!info.phone || info.phone.replace(/\D/g, '').length < 7) {
+            setResult('Please enter a valid phone number.', true);
+            customerPhoneInput?.focus();
+            return false;
+        }
+
+        if (!info.address) {
+            setResult('Please enter your street address.', true);
+            customerAddressInput?.focus();
+            return false;
+        }
+
+        if (!info.city) {
+            setResult('Please enter your city.', true);
+            customerCityInput?.focus();
+            return false;
+        }
+
+        if (!info.state) {
+            setResult('Please select your state.', true);
+            customerStateInput?.focus();
+            return false;
+        }
+
+        if (!info.zip || !/^\d{5}(-\d{4})?$/.test(info.zip)) {
+            setResult('Please enter a valid ZIP code.', true);
+            customerZipInput?.focus();
+            return false;
+        }
+
+        return true;
+    }
+
+    async function fetchConfig() {
+        const response = await fetch(`${PAYPAL_API_BASE}/api/config`);
+        if (!response.ok) {
+            throw new Error('Could not reach the PayPal server.');
+        }
+        return response.json();
+    }
+
+    function loadPaypalSdk(clientId) {
+        return new Promise((resolve, reject) => {
+            if (window.paypal) {
+                resolve();
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&buyer-country=US&currency=USD&components=buttons,card-fields&enable-funding=venmo,paylater,card`;
+            script.dataset.sdkIntegrationSource = 'developer-studio';
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error('Failed to load the PayPal SDK.'));
+            document.head.appendChild(script);
+        });
+    }
+
     async function createOrder(cart) {
         const response = await fetch(`${PAYPAL_API_BASE}/api/orders`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ cart })
         });
 
@@ -121,9 +221,7 @@
     async function captureOrder(orderId) {
         const response = await fetch(`${PAYPAL_API_BASE}/api/orders/${orderId}/capture`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            headers: { 'Content-Type': 'application/json' }
         });
 
         const orderData = await response.json().catch(() => ({}));
@@ -134,19 +232,145 @@
         return orderData;
     }
 
-    function initPaypalButtons(cart) {
-        if (!buttonContainer) {
-            return;
+    async function saveOrderToBackend(cart, paypalTransactionId) {
+        const info = getCustomerInfo();
+
+        try {
+            const response = await fetch(`${BACKEND_API_BASE}/api/orders`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    items: cart.map((item) => ({
+                        product_id: item.product_id,
+                        quantity: item.quantity
+                    })),
+                    customer: {
+                        name: info.name || 'PayPal Customer',
+                        email: info.email || 'no-email@checkout.local',
+                        phone: info.phone || '',
+                        address: info.address || '',
+                        city: info.city || '',
+                        state: info.state || '',
+                        zip: info.zip || ''
+                    },
+                    payment_method: 'paypal',
+                    source_id: paypalTransactionId
+                })
+            });
+
+            const data = await response.json().catch(() => ({}));
+            return data?.order || null;
+        } catch (_error) {
+            return null;
+        }
+    }
+
+    async function sendReceiptEmail(orderRecord, paypalTransactionId) {
+        const info = getCustomerInfo();
+        if (!info.email) return;
+
+        try {
+            await fetch(`${PAYPAL_API_BASE}/api/send-receipt`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    order: orderRecord,
+                    paypal_transaction_id: paypalTransactionId,
+                    customer_email: info.email
+                })
+            });
+        } catch (_error) {
+            // Receipt email is best-effort
+        }
+    }
+
+    function showOrderConfirmation(cart, orderRecord, paypalTransactionId) {
+        const info = getCustomerInfo();
+
+        // Hide payment forms
+        if (buttonContainer) buttonContainer.hidden = true;
+        if (cardForm) cardForm.hidden = true;
+        if (customerInfoForm) customerInfoForm.hidden = true;
+        const divider = document.querySelector('.paypal-divider');
+        if (divider) divider.hidden = true;
+
+        // Hide all h2 headings in the payment section
+        document.querySelectorAll('section.cart-panel[aria-label="Payment"] h2').forEach(h => h.hidden = true);
+
+        // Hide the status message
+        if (result) result.hidden = true;
+
+        // Show confirmation
+        if (orderConfirmation) {
+            orderConfirmation.hidden = false;
         }
 
-        if (!window.paypal || typeof window.paypal.Buttons !== 'function') {
-            setResult('The PayPal SDK did not load.', true);
+        if (confirmationMessage) {
+            const orderId = orderRecord?.id || paypalTransactionId;
+            confirmationMessage.textContent = `Order #${orderId} has been placed successfully.`;
+        }
+
+        if (confirmationDetails && cart.length > 0) {
+            const subtotal = getSubtotal(cart);
+            const tax = subtotal * 0.08;
+            const total = subtotal + tax;
+
+            let html = '<table class="confirmation-table">';
+            html += '<tr><th>Item</th><th>Qty</th><th>Price</th></tr>';
+            cart.forEach(item => {
+                html += `<tr><td>${item.name}</td><td>${item.quantity}</td><td>${formatPrice(item.unit_price * item.quantity)}</td></tr>`;
+            });
+            html += `<tr class="confirmation-subtotal"><td colspan="2">Subtotal</td><td>${formatPrice(subtotal)}</td></tr>`;
+            html += `<tr><td colspan="2">Tax (8%)</td><td>${formatPrice(tax)}</td></tr>`;
+            html += `<tr class="confirmation-total"><td colspan="2">Total</td><td>${formatPrice(total)}</td></tr>`;
+            html += '</table>';
+
+            // Shipping address
+            html += '<div class="confirmation-shipping">';
+            html += '<h3>Shipping To</h3>';
+            html += `<p>${info.name}</p>`;
+            html += `<p>${info.address}</p>`;
+            html += `<p>${info.city}, ${info.state} ${info.zip}</p>`;
+            html += `<p>${info.phone}</p>`;
+            html += '</div>';
+
+            confirmationDetails.innerHTML = html;
+        }
+
+        if (confirmationEmail) {
+            confirmationEmail.textContent = info.email;
+        }
+    }
+
+    async function handlePaymentSuccess(cart, orderData) {
+        const transaction =
+            orderData?.purchase_units?.[0]?.payments?.captures?.[0] ||
+            orderData?.purchase_units?.[0]?.payments?.authorizations?.[0];
+
+        if (!transaction) {
+            throw new Error('PayPal returned an incomplete capture response.');
+        }
+
+        // Save to backend and get order record
+        const orderRecord = await saveOrderToBackend(cart, transaction.id);
+
+        // Send receipt email (best-effort, don't block)
+        sendReceiptEmail(orderRecord, transaction.id);
+
+        // Clear cart
+        localStorage.removeItem(STORAGE_KEY);
+
+        // Show confirmation page
+        showOrderConfirmation(cart, orderRecord, transaction.id);
+    }
+
+    function initPaypalButtons(cart) {
+        if (!buttonContainer || !window.paypal || typeof window.paypal.Buttons !== 'function') {
             return;
         }
 
         if (cart.length === 0) {
             buttonContainer.hidden = true;
-            setResult('Add items to your cart before using PayPal checkout.', true);
             return;
         }
 
@@ -160,6 +384,9 @@
                 label: 'paypal'
             },
             async createOrder() {
+                if (!validateCustomerInfo()) {
+                    throw new Error('Please fill in your information above.');
+                }
                 setResult('', false);
                 return createOrder(cart);
             },
@@ -176,18 +403,7 @@
                         throw new Error(`${errorDetail.description} (${orderData.debug_id})`);
                     }
 
-                    const transaction =
-                        orderData?.purchase_units?.[0]?.payments?.captures?.[0] ||
-                        orderData?.purchase_units?.[0]?.payments?.authorizations?.[0];
-
-                    if (!transaction) {
-                        throw new Error('PayPal returned an incomplete capture response.');
-                    }
-
-                    localStorage.removeItem(STORAGE_KEY);
-                    renderCart([]);
-                    buttonContainer.hidden = true;
-                    setResult(`Transaction ${transaction.status}: ${transaction.id}`, false);
+                    await handlePaymentSuccess(cart, orderData);
                 } catch (error) {
                     setResult(error.message || 'Sorry, your transaction could not be processed.', true);
                 }
@@ -198,7 +414,121 @@
         }).render('#paypal-button-container');
     }
 
-    const cart = readCart();
-    renderCart(cart);
-    initPaypalButtons(cart);
+    function initCardFields(cart) {
+        if (!cardForm || !cardSubmit || !window.paypal || typeof window.paypal.CardFields !== 'function') {
+            if (cardForm) {
+                cardForm.hidden = true;
+            }
+            return;
+        }
+
+        if (cart.length === 0) {
+            cardForm.hidden = true;
+            return;
+        }
+
+        const cardFields = window.paypal.CardFields({
+            createOrder() {
+                if (!validateCustomerInfo()) {
+                    throw new Error('Please fill in your information above.');
+                }
+                setResult('', false);
+                return createOrder(cart);
+            },
+            async onApprove(data) {
+                try {
+                    const orderData = await captureOrder(data.orderID);
+                    const errorDetail = orderData?.details?.[0];
+
+                    if (errorDetail) {
+                        throw new Error(`${errorDetail.description} (${orderData.debug_id})`);
+                    }
+
+                    await handlePaymentSuccess(cart, orderData);
+                } catch (error) {
+                    setResult(error.message || 'Sorry, your transaction could not be processed.', true);
+                    cardSubmit.disabled = false;
+                }
+            },
+            onError(error) {
+                setResult(error.message || 'Sorry, your transaction could not be processed.', true);
+                cardSubmit.disabled = false;
+            },
+            style: {
+                input: {
+                    'font-size': '16px',
+                    'font-family': "'Barlow Condensed', sans-serif",
+                    color: '#f4f8ff',
+                    'padding': '0'
+                },
+                '.invalid': {
+                    color: '#ffe6f0'
+                }
+            }
+        });
+
+        if (!cardFields.isEligible()) {
+            cardForm.hidden = true;
+            return;
+        }
+
+        cardFields.NameField().render('#card-name-field');
+        cardFields.NumberField().render('#card-number-field');
+        cardFields.ExpiryField().render('#card-expiry-field');
+        cardFields.CVVField().render('#card-cvv-field');
+
+        cardSubmit.disabled = false;
+
+        cardSubmit.addEventListener('click', async () => {
+            if (!validateCustomerInfo()) {
+                return;
+            }
+
+            cardSubmit.disabled = true;
+            setResult('', false);
+
+            try {
+                await cardFields.submit();
+            } catch (error) {
+                setResult(error.message || 'Card payment failed. Please check your details.', true);
+                cardSubmit.disabled = false;
+            }
+        });
+    }
+
+    async function init() {
+        const cart = readCart();
+        renderCart(cart);
+
+        if (cart.length === 0) {
+            if (cardForm) cardForm.hidden = true;
+            if (buttonContainer) buttonContainer.hidden = true;
+            if (customerInfoForm) customerInfoForm.hidden = true;
+            const divider = document.querySelector('.paypal-divider');
+            if (divider) divider.hidden = true;
+            setResult('Add items to your cart before checkout.', true);
+            return;
+        }
+
+        try {
+            const config = await fetchConfig();
+            if (!config.configured) {
+                setResult('PayPal is not configured on the server. Set PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET in the .env file and restart the server.', true);
+                return;
+            }
+
+            await loadPaypalSdk(config.clientId);
+            initCardFields(cart);
+            initPaypalButtons(cart);
+        } catch (error) {
+            setResult(
+                error.message === 'Failed to fetch'
+                    ? 'Cannot reach the PayPal server at ' + PAYPAL_API_BASE + '. Make sure to run: npm run paypal-server'
+                    : error.message || 'PayPal checkout is unavailable.',
+                true
+            );
+        }
+    }
+
+    init();
 })();

@@ -383,16 +383,38 @@ h1 {
 .checkout-input {
     width: 100%;
     margin-top: 0.35rem;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.35);
     border-radius: 10px;
-    padding: 0.52rem 0.65rem;
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--text);
+    padding: 0.7rem 0.85rem;
+    background: rgba(0, 0, 0, 0.35);
+    color: #ffffff;
     font: inherit;
+    font-size: 16px;
+    letter-spacing: 0.02em;
 }
 
 .checkout-input::placeholder {
-    color: rgba(255, 255, 255, 0.65);
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.checkout-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23fff' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    padding-right: 2rem;
+    cursor: pointer;
+}
+
+.checkout-select option {
+    background: #1a2a3a;
+    color: #ffffff;
+}
+
+.checkout-address-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 0.6rem;
 }
 
 .square-payment-panel {
@@ -459,6 +481,150 @@ h1 {
     align-items: start;
 }
 
+.card-form {
+    margin-top: 0.5rem;
+}
+
+.card-field-group {
+    margin-top: 0.6rem;
+}
+
+.card-field {
+    margin-top: 0.35rem;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    padding: 0.55rem 0.65rem;
+    background: rgba(255, 255, 255, 0.08);
+    min-height: 40px;
+}
+
+.card-field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+}
+
+.paypal-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin: 1.2rem 0;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+}
+
+.paypal-divider::before,
+.paypal-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ── Order confirmation ───────────────────────────────────────── */
+
+.order-confirmation {
+    text-align: center;
+    padding: 2rem 1rem;
+}
+
+.confirmation-icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 1rem;
+    border-radius: 50%;
+    background: rgba(141, 255, 47, 0.18);
+    color: var(--neon);
+    font-size: 2rem;
+    line-height: 60px;
+    font-weight: bold;
+}
+
+.order-confirmation h2 {
+    font-family: 'Orbitron', monospace;
+    color: var(--neon);
+    margin: 0 0 0.5rem;
+}
+
+.order-confirmation p {
+    color: var(--ice);
+    margin: 0.25rem 0;
+}
+
+.confirmation-details {
+    margin: 1.2rem 0;
+    text-align: left;
+}
+
+.confirmation-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.confirmation-table th {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    padding: 0.5rem 0.6rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    text-align: left;
+}
+
+.confirmation-table td {
+    padding: 0.45rem 0.6rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.confirmation-table tr.confirmation-subtotal td {
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    padding-top: 0.7rem;
+}
+
+.confirmation-table tr.confirmation-total td {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: var(--neon);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    padding-top: 0.7rem;
+}
+
+.confirmation-receipt {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+}
+
+.checkout-input:focus {
+    outline: none;
+    border-color: var(--neon);
+    box-shadow: 0 0 0 2px rgba(141, 255, 47, 0.15);
+}
+
+.confirmation-shipping {
+    margin-top: 1.2rem;
+    padding: 1rem;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.confirmation-shipping h3 {
+    margin: 0 0 0.4rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+}
+
+.confirmation-shipping p {
+    margin: 0.15rem 0;
+    font-size: 0.95rem;
+}
+
 @media (max-width: 980px) {
     .shop-layout {
         grid-template-columns: 1fr;
@@ -475,5 +641,9 @@ h1 {
     .shop-actions {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .checkout-address-row {
+        grid-template-columns: 1fr;
     }
 }
