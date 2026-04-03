@@ -2,6 +2,7 @@
     const STORAGE_KEY = 'safecharge_cart_v2';
     const PAYPAL_API_BASE = 'http://127.0.0.1:8080';
     const BACKEND_API_BASE = 'http://127.0.0.1:8000';
+    const SHIPPING_COST = 2.00;
 
     const cartList = document.getElementById('paypal-cart-items');
     const cartEmpty = document.getElementById('paypal-cart-empty');
@@ -15,6 +16,19 @@
     const confirmationMessage = document.getElementById('confirmation-message');
     const confirmationDetails = document.getElementById('confirmation-details');
     const confirmationEmail = document.getElementById('confirmation-email');
+    const summaryOrderTotal = document.getElementById('summary-order-total');
+    const cardNameInput = document.getElementById('card-name-input');
+
+    // Progress step helpers
+    function setProgressStep(step) {
+        document.querySelectorAll('.progress-step').forEach((el) => {
+            const s = Number(el.dataset.step);
+            el.classList.toggle('active', s <= step);
+        });
+        document.querySelectorAll('.progress-connector').forEach((el, i) => {
+            el.classList.toggle('active', i < step - 1);
+        });
+    }
 
     // Customer input elements
     const customerNameInput = document.getElementById('customer-name');
@@ -92,7 +106,12 @@
         }
 
         cartList.innerHTML = '';
-        cartTotal.textContent = formatPrice(getSubtotal(cart));
+        const subtotal = getSubtotal(cart);
+        cartTotal.textContent = formatPrice(subtotal);
+        if (summaryOrderTotal) {
+            const orderTotal = cart.length > 0 ? subtotal + SHIPPING_COST : 0;
+            summaryOrderTotal.textContent = formatPrice(orderTotal);
+        }
 
         if (cart.length === 0) {
             cartEmpty.hidden = false;
@@ -191,7 +210,7 @@
             }
 
             const script = document.createElement('script');
-            script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&buyer-country=US&currency=USD&components=buttons,card-fields&enable-funding=venmo,paylater,card`;
+            script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&buyer-country=US&currency=USD&components=buttons,card-fields&enable-funding=venmo,card`;
             script.dataset.sdkIntegrationSource = 'developer-studio';
             script.onload = () => resolve();
             script.onerror = () => reject(new Error('Failed to load the PayPal SDK.'));
@@ -200,10 +219,11 @@
     }
 
     async function createOrder(cart) {
+        const customer = getCustomerInfo();
         const response = await fetch(`${PAYPAL_API_BASE}/api/orders`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cart })
+            body: JSON.stringify({ cart, customer })
         });
 
         const orderData = await response.json().catch(() => ({}));
@@ -287,15 +307,21 @@
     function showOrderConfirmation(cart, orderRecord, paypalTransactionId) {
         const info = getCustomerInfo();
 
-        // Hide payment forms
+        // Advance progress to step 3
+        setProgressStep(3);
+
+        // Hide payment forms and shipping section
         if (buttonContainer) buttonContainer.hidden = true;
         if (cardForm) cardForm.hidden = true;
         if (customerInfoForm) customerInfoForm.hidden = true;
-        const divider = document.querySelector('.paypal-divider');
+        const divider = document.querySelector('.payment-divider');
         if (divider) divider.hidden = true;
 
-        // Hide all h2 headings in the payment section
-        document.querySelectorAll('section.cart-panel[aria-label="Payment"] h2').forEach(h => h.hidden = true);
+        // Hide checkout sections
+        const sectionShipping = document.getElementById('section-shipping');
+        const sectionPayment = document.getElementById('section-payment');
+        if (sectionShipping) sectionShipping.hidden = true;
+        if (sectionPayment) sectionPayment.hidden = true;
 
         // Hide the status message
         if (result) result.hidden = true;
@@ -312,8 +338,9 @@
 
         if (confirmationDetails && cart.length > 0) {
             const subtotal = getSubtotal(cart);
+            const shipping = SHIPPING_COST;
             const tax = subtotal * 0.08;
-            const total = subtotal + tax;
+            const total = subtotal + shipping + tax;
 
             let html = '<table class="confirmation-table">';
             html += '<tr><th>Item</th><th>Qty</th><th>Price</th></tr>';
@@ -321,6 +348,7 @@
                 html += `<tr><td>${item.name}</td><td>${item.quantity}</td><td>${formatPrice(item.unit_price * item.quantity)}</td></tr>`;
             });
             html += `<tr class="confirmation-subtotal"><td colspan="2">Subtotal</td><td>${formatPrice(subtotal)}</td></tr>`;
+            html += `<tr><td colspan="2">Shipping</td><td>${formatPrice(shipping)}</td></tr>`;
             html += `<tr><td colspan="2">Tax (8%)</td><td>${formatPrice(tax)}</td></tr>`;
             html += `<tr class="confirmation-total"><td colspan="2">Total</td><td>${formatPrice(total)}</td></tr>`;
             html += '</table>';
@@ -472,7 +500,6 @@
             return;
         }
 
-        cardFields.NameField().render('#card-name-field');
         cardFields.NumberField().render('#card-number-field');
         cardFields.ExpiryField().render('#card-expiry-field');
         cardFields.CVVField().render('#card-cvv-field');
@@ -484,14 +511,25 @@
                 return;
             }
 
+            const cardholderName = (cardNameInput?.value || '').trim();
+            if (!cardholderName) {
+                setResult('Please enter the cardholder name.', true);
+                cardNameInput?.focus();
+                return;
+            }
+
             cardSubmit.disabled = true;
+            cardSubmit.textContent = 'Processing...';
             setResult('', false);
 
             try {
-                await cardFields.submit();
+                await cardFields.submit({
+                    cardholderName: cardholderName
+                });
             } catch (error) {
                 setResult(error.message || 'Card payment failed. Please check your details.', true);
                 cardSubmit.disabled = false;
+                cardSubmit.innerHTML = '<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M12 2a5 5 0 00-5 5v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V7a5 5 0 00-5-5zm-3 8V7a3 3 0 116 0v3H9z" fill="currentColor"/></svg> Pay Securely Now';
             }
         });
     }
@@ -504,10 +542,16 @@
             if (cardForm) cardForm.hidden = true;
             if (buttonContainer) buttonContainer.hidden = true;
             if (customerInfoForm) customerInfoForm.hidden = true;
-            const divider = document.querySelector('.paypal-divider');
+            const divider = document.querySelector('.payment-divider');
             if (divider) divider.hidden = true;
             setResult('Add items to your cart before checkout.', true);
             return;
+        }
+
+        // Advance to step 2 when user interacts with payment section
+        const paymentSection = document.getElementById('section-payment');
+        if (paymentSection) {
+            paymentSection.addEventListener('focusin', () => setProgressStep(2), { once: true });
         }
 
         try {

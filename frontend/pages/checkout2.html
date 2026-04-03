@@ -3,8 +3,9 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>SafeCharge | PayPal Checkout</title>
+        <title>SafeCharge | Secure Checkout</title>
         <link rel="stylesheet" href="../css/styles.css" />
+        <link rel="stylesheet" href="../css/checkout2.css" />
     </head>
     <body>
         <header class="site-header">
@@ -19,126 +20,204 @@
             </div>
         </header>
 
-        <main class="hero">
-            <p class="kicker">CHECKOUT</p>
-            <h1>Complete Your Order</h1>
-            <p>Pay securely with your card or PayPal account.</p>
+        <main class="checkout-main">
+            <!-- Progress Steps -->
+            <div class="checkout-progress">
+                <div class="progress-step active" data-step="1">
+                    <span class="step-number">1</span>
+                    <span class="step-label">Shipping</span>
+                </div>
+                <div class="progress-connector active"></div>
+                <div class="progress-step" data-step="2">
+                    <span class="step-number">2</span>
+                    <span class="step-label">Payment</span>
+                </div>
+                <div class="progress-connector"></div>
+                <div class="progress-step" data-step="3">
+                    <span class="step-number">3</span>
+                    <span class="step-label">Confirm</span>
+                </div>
+            </div>
 
-            <section class="cart-page-layout" aria-label="PayPal checkout">
-                <aside class="cart-panel" aria-label="Cart summary">
-                    <h2>Cart Summary</h2>
-                    <ul id="paypal-cart-items" class="cart-items"></ul>
-                    <p id="paypal-cart-empty" class="cart-empty">Your cart is empty.</p>
-                    <div class="cart-total-row">
-                        <span>Subtotal</span>
-                        <strong id="paypal-cart-total">$0.00</strong>
-                    </div>
-                </aside>
-
-                <section class="cart-panel" aria-label="Payment">
-                    <!-- Customer Info -->
-                    <h2>Your Information</h2>
-                    <div class="card-form" id="customer-info-form">
-                        <div class="card-field-group">
-                            <label class="checkout-label" for="customer-name">Full Name</label>
-                            <input type="text" id="customer-name" class="checkout-input" placeholder="John Doe" required />
+            <div class="checkout-grid">
+                <!-- Left Column: Forms -->
+                <div class="checkout-left">
+                    <!-- Section 1: Shipping -->
+                    <section class="checkout-section" id="section-shipping">
+                        <div class="section-header">
+                            <h2 class="section-title">
+                                <span class="section-number">1</span>
+                                Shipping Address
+                            </h2>
                         </div>
-                        <div class="card-field-group">
-                            <label class="checkout-label" for="customer-email">Email (for receipt)</label>
-                            <input type="email" id="customer-email" class="checkout-input" placeholder="you@example.com" required />
-                        </div>
-                        <div class="card-field-group">
-                            <label class="checkout-label" for="customer-phone">Phone Number</label>
-                            <input type="tel" id="customer-phone" class="checkout-input" placeholder="(555) 123-4567" required />
-                        </div>
-                        <div class="card-field-group">
-                            <label class="checkout-label" for="customer-address">Street Address</label>
-                            <input type="text" id="customer-address" class="checkout-input" placeholder="123 Main St, Apt 4" required />
-                        </div>
-                        <div class="checkout-address-row">
-                            <div class="card-field-group">
-                                <label class="checkout-label" for="customer-city">City</label>
-                                <input type="text" id="customer-city" class="checkout-input" placeholder="Los Angeles" required />
+                        <div class="section-body" id="customer-info-form">
+                            <div class="form-row">
+                                <div class="form-group full">
+                                    <label class="form-label" for="customer-name">Full name</label>
+                                    <input type="text" id="customer-name" class="form-input" placeholder="John Doe" required autocomplete="name" />
+                                </div>
                             </div>
-                            <div class="card-field-group">
-                                <label class="checkout-label" for="customer-state">State</label>
-                                <select id="customer-state" class="checkout-input checkout-select">
-                                    <option value="">State</option>
-                                    <option value="AL">AL</option><option value="AK">AK</option><option value="AZ">AZ</option>
-                                    <option value="AR">AR</option><option value="CA">CA</option><option value="CO">CO</option>
-                                    <option value="CT">CT</option><option value="DE">DE</option><option value="FL">FL</option>
-                                    <option value="GA">GA</option><option value="HI">HI</option><option value="ID">ID</option>
-                                    <option value="IL">IL</option><option value="IN">IN</option><option value="IA">IA</option>
-                                    <option value="KS">KS</option><option value="KY">KY</option><option value="LA">LA</option>
-                                    <option value="ME">ME</option><option value="MD">MD</option><option value="MA">MA</option>
-                                    <option value="MI">MI</option><option value="MN">MN</option><option value="MS">MS</option>
-                                    <option value="MO">MO</option><option value="MT">MT</option><option value="NE">NE</option>
-                                    <option value="NV">NV</option><option value="NH">NH</option><option value="NJ">NJ</option>
-                                    <option value="NM">NM</option><option value="NY">NY</option><option value="NC">NC</option>
-                                    <option value="ND">ND</option><option value="OH">OH</option><option value="OK">OK</option>
-                                    <option value="OR">OR</option><option value="PA">PA</option><option value="RI">RI</option>
-                                    <option value="SC">SC</option><option value="SD">SD</option><option value="TN">TN</option>
-                                    <option value="TX">TX</option><option value="UT">UT</option><option value="VT">VT</option>
-                                    <option value="VA">VA</option><option value="WA">WA</option><option value="WV">WV</option>
-                                    <option value="WI">WI</option><option value="WY">WY</option><option value="DC">DC</option>
-                                </select>
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label class="form-label" for="customer-email">Email address</label>
+                                    <input type="email" id="customer-email" class="form-input" placeholder="you@example.com" required autocomplete="email" />
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="customer-phone">Phone number</label>
+                                    <input type="tel" id="customer-phone" class="form-input" placeholder="(555) 123-4567" required autocomplete="tel" />
+                                </div>
                             </div>
-                            <div class="card-field-group">
-                                <label class="checkout-label" for="customer-zip">ZIP</label>
-                                <input type="text" id="customer-zip" class="checkout-input" placeholder="90001" maxlength="10" required />
+                            <div class="form-row">
+                                <div class="form-group full">
+                                    <label class="form-label" for="customer-address">Street address</label>
+                                    <input type="text" id="customer-address" class="form-input" placeholder="123 Main St, Apt 4" required autocomplete="street-address" />
+                                </div>
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- Card Payment -->
-                    <h2 style="margin-top: 1.5rem;">Pay with Card</h2>
-
-                    <div id="card-form" class="card-form">
-                        <div class="card-field-group">
-                            <label class="checkout-label" for="card-name-field">Cardholder Name</label>
-                            <div id="card-name-field" class="card-field"></div>
-                        </div>
-
-                        <div class="card-field-group">
-                            <label class="checkout-label" for="card-number-field">Card Number</label>
-                            <div id="card-number-field" class="card-field"></div>
-                        </div>
-
-                        <div class="card-field-row">
-                            <div class="card-field-group">
-                                <label class="checkout-label" for="card-expiry-field">Expiry</label>
-                                <div id="card-expiry-field" class="card-field"></div>
-                            </div>
-                            <div class="card-field-group">
-                                <label class="checkout-label" for="card-cvv-field">CVV</label>
-                                <div id="card-cvv-field" class="card-field"></div>
+                            <div class="form-row three-col">
+                                <div class="form-group">
+                                    <label class="form-label" for="customer-city">City</label>
+                                    <input type="text" id="customer-city" class="form-input" placeholder="Los Angeles" required autocomplete="address-level2" />
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="customer-state">State</label>
+                                    <select id="customer-state" class="form-input form-select" autocomplete="address-level1">
+                                        <option value="">Select</option>
+                                        <option value="AL">AL</option><option value="AK">AK</option><option value="AZ">AZ</option>
+                                        <option value="AR">AR</option><option value="CA">CA</option><option value="CO">CO</option>
+                                        <option value="CT">CT</option><option value="DE">DE</option><option value="FL">FL</option>
+                                        <option value="GA">GA</option><option value="HI">HI</option><option value="ID">ID</option>
+                                        <option value="IL">IL</option><option value="IN">IN</option><option value="IA">IA</option>
+                                        <option value="KS">KS</option><option value="KY">KY</option><option value="LA">LA</option>
+                                        <option value="ME">ME</option><option value="MD">MD</option><option value="MA">MA</option>
+                                        <option value="MI">MI</option><option value="MN">MN</option><option value="MS">MS</option>
+                                        <option value="MO">MO</option><option value="MT">MT</option><option value="NE">NE</option>
+                                        <option value="NV">NV</option><option value="NH">NH</option><option value="NJ">NJ</option>
+                                        <option value="NM">NM</option><option value="NY">NY</option><option value="NC">NC</option>
+                                        <option value="ND">ND</option><option value="OH">OH</option><option value="OK">OK</option>
+                                        <option value="OR">OR</option><option value="PA">PA</option><option value="RI">RI</option>
+                                        <option value="SC">SC</option><option value="SD">SD</option><option value="TN">TN</option>
+                                        <option value="TX">TX</option><option value="UT">UT</option><option value="VT">VT</option>
+                                        <option value="VA">VA</option><option value="WA">WA</option><option value="WV">WV</option>
+                                        <option value="WI">WI</option><option value="WY">WY</option><option value="DC">DC</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="customer-zip">ZIP code</label>
+                                    <input type="text" id="customer-zip" class="form-input" placeholder="90001" maxlength="10" required autocomplete="postal-code" />
+                                </div>
                             </div>
                         </div>
+                    </section>
 
-                        <button type="button" id="card-submit" class="checkout-button" disabled>
-                            Pay Now
-                        </button>
-                    </div>
+                    <!-- Section 2: Payment -->
+                    <section class="checkout-section" id="section-payment">
+                        <div class="section-header">
+                            <h2 class="section-title">
+                                <span class="section-number">2</span>
+                                Payment Method
+                            </h2>
+                        </div>
+                        <div class="section-body">
+                            <!-- Card Payment -->
+                            <div class="payment-option" id="card-form">
+                                <div class="payment-option-header">
+                                    <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M2 10h20" stroke="currentColor" stroke-width="1.5"/></svg>
+                                    <span>Credit or Debit Card</span>
+                                </div>
 
-                    <div class="paypal-divider">
-                        <span>or</span>
-                    </div>
+                                <div class="card-fields-wrapper">
+                                    <div class="form-group">
+                                        <label class="form-label" for="card-name-input">Cardholder name <span class="required-star">*</span></label>
+                                        <input type="text" id="card-name-input" class="form-input" placeholder="Name as it appears on card" required autocomplete="cc-name" />
+                                    </div>
 
-                    <div id="paypal-button-container"></div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="card-number-field">Card number</label>
+                                        <div id="card-number-field" class="card-field"></div>
+                                    </div>
+
+                                    <div class="form-row two-col">
+                                        <div class="form-group">
+                                            <label class="form-label" for="card-expiry-field">Expiry date</label>
+                                            <div id="card-expiry-field" class="card-field"></div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label" for="card-cvv-field">Security code (CVV)</label>
+                                            <div id="card-cvv-field" class="card-field"></div>
+                                        </div>
+                                    </div>
+
+                                    <button type="button" id="card-submit" class="btn-pay" disabled>
+                                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M12 2a5 5 0 00-5 5v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V7a5 5 0 00-5-5zm-3 8V7a3 3 0 116 0v3H9z" fill="currentColor"/></svg>
+                                        Pay Securely Now
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="payment-divider">
+                                <span>or pay with</span>
+                            </div>
+
+                            <div id="paypal-button-container" class="paypal-container"></div>
+                        </div>
+                    </section>
 
                     <p id="result-message" class="checkout-status" aria-live="polite"></p>
 
                     <!-- Order Confirmation (hidden until payment succeeds) -->
                     <div id="order-confirmation" class="order-confirmation" hidden>
-                        <div class="confirmation-icon">&#10003;</div>
+                        <div class="confirmation-icon">
+                            <svg width="32" height="32" fill="none" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/></svg>
+                        </div>
                         <h2>Order Confirmed!</h2>
                         <p id="confirmation-message"></p>
                         <div id="confirmation-details" class="confirmation-details"></div>
                         <p class="confirmation-receipt">A receipt has been sent to <strong id="confirmation-email"></strong></p>
-                        <a href="shop.html" class="checkout-button" style="display:inline-block; text-align:center; margin-top:1rem;">Continue Shopping</a>
+                        <a href="shop.html" class="btn-continue">Continue Shopping</a>
                     </div>
-                </section>
-            </section>
+                </div>
+
+                <!-- Right Column: Order Summary -->
+                <aside class="checkout-right">
+                    <div class="order-summary" aria-label="Cart summary">
+                        <h3 class="summary-title">Order Summary</h3>
+                        <ul id="paypal-cart-items" class="summary-items"></ul>
+                        <p id="paypal-cart-empty" class="summary-empty">Your cart is empty.</p>
+
+                        <div class="summary-line">
+                            <span>Subtotal</span>
+                            <span id="paypal-cart-total">$0.00</span>
+                        </div>
+                        <div class="summary-line">
+                            <span>Shipping</span>
+                            <span id="summary-shipping">$2.00</span>
+                        </div>
+                        <div class="summary-line">
+                            <span>Estimated tax</span>
+                            <span class="summary-tax">Calculated at checkout</span>
+                        </div>
+                        <div class="summary-total">
+                            <span>Order total</span>
+                            <strong id="summary-order-total">$0.00</strong>
+                        </div>
+
+                        <div class="trust-badges">
+                            <div class="trust-badge">
+                                <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M12 2a5 5 0 00-5 5v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V7a5 5 0 00-5-5zm-3 8V7a3 3 0 116 0v3H9z" fill="currentColor"/></svg>
+                                <span>Secure checkout</span>
+                            </div>
+                            <div class="trust-badge">
+                                <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                                <span>256-bit SSL encrypted</span>
+                            </div>
+                            <div class="trust-badge">
+                                <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                                <span>Money-back guarantee</span>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+            </div>
         </main>
 
         <footer class="site-footer" aria-label="Footer">

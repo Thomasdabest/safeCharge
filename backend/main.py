@@ -8,21 +8,20 @@ import time
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Literal, Optional
 from uuid import uuid4
 
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-
-BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = BASE_DIR / "data"
-ORDERS_FILE = DATA_DIR / "orders.json"
+from pymongo import MongoClient, DESCENDING
 
 ADMIN_USER = os.getenv("ADMIN_USER", "admin")
 ADMIN_PASS = os.getenv("ADMIN_PASS", "safecharge2026")
 ADMIN_SECRET = os.getenv("ADMIN_SECRET", "sc-secret-key-change-me")
+
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://127.0.0.1:27017")
+MONGO_DB = os.getenv("MONGO_DB", "safecharge")
 
 PRODUCTS = [
     {
@@ -33,22 +32,6 @@ PRODUCTS = [
         "currency": "USD",
         "in_stock": True,
     },
-    # {
-    #     "id": "berry-surge",
-    #     "name": "Berry Surge",
-    #     "description": "Berry flavor with electrolytes and zero crash.",
-    #     "price": 3.99,
-    #     "currency": "USD",
-    #     "in_stock": True,
-    # },
-    # {
-    #     "id": "tropical-bolt",
-    #     "name": "Tropical Bolt",
-    #     "description": "Tropical fruit blend for all-day focus.",
-    #     "price": 4.29,
-    #     "currency": "USD",
-    #     "in_stock": True,
-    # },
 ]
 
 PRODUCT_INDEX = {product["id"]: product for product in PRODUCTS}
@@ -100,7 +83,6 @@ app.add_middleware(
 # ── Admin auth helpers ─────────────────────────────────────────────────────────
 
 def _create_admin_token(username: str) -> str:
-    """Create a simple HMAC token: username.timestamp.signature"""
     ts = str(int(time.time()))
     payload = f"{username}.{ts}"
     sig = hmac.new(ADMIN_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()
@@ -108,7 +90,6 @@ def _create_admin_token(username: str) -> str:
 
 
 def _verify_admin_token(token: str) -> bool:
-    """Verify an admin token. Tokens expire after 24 hours."""
     parts = token.split(".")
     if len(parts) != 3:
         return False
@@ -117,11 +98,8 @@ def _verify_admin_token(token: str) -> bool:
         token_time = int(ts)
     except ValueError:
         return False
-
-    # Check expiry (24 hours)
     if time.time() - token_time > 86400:
         return False
-
     expected_payload = f"{username}.{ts}"
     expected_sig = hmac.new(ADMIN_SECRET.encode(), expected_payload.encode(), hashlib.sha256).hexdigest()
     return hmac.compare_digest(sig, expected_sig)
@@ -135,30 +113,20 @@ def _require_admin(authorization: str | None) -> None:
         raise HTTPException(status_code=401, detail="Invalid or expired admin token.")
 
 
-# ── Data helpers ───────────────────────────────────────────────────────────────
+# ── MongoDB helpers ───────────────────────────────────────────────────────────
 
-def _ensure_orders_file() -> None:
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    if not ORDERS_FILE.exists():
-        ORDERS_FILE.write_text("[]", encoding="utf-8")
+mongo_client: MongoClient = None
+db = None
 
 
-def _read_orders() -> list[dict]:
-    _ensure_orders_file()
-    try:
-        with ORDERS_FILE.open("r", encoding="utf-8") as f:
-            data = json.load(f)
-    except json.JSONDecodeError:
-        _write_orders([])
-        return []
-
-    return data if isinstance(data, list) else []
+def _get_db():
+    return db
 
 
-def _write_orders(orders: list[dict]) -> None:
-    _ensure_orders_file()
-    with ORDERS_FILE.open("w", encoding="utf-8") as f:
-        json.dump(orders, f, indent=2)
+def _clean_doc(doc: dict) -> dict:
+    """Remove MongoDB's internal _id field before returning."""
+    doc.pop("_id", None)
+    return doc
 
 
 # ── Square helpers ─────────────────────────────────────────────────────────────
@@ -255,6 +223,25 @@ def _create_square_payment(order_record: dict, order: OrderIn, total: float) -> 
     return payment
 
 
+# ── Startup ───────────────────────────────────────────────────────────────────
+
+@app.on_event("startup")
+def on_startup():
+    global mongo_client, db
+    mongo_client = MongoClient(MONGO_URI)
+    db = mongo_client[MONGO_DB]
+    # Create index on created_at for efficient sorting
+    db.orders.create_index([("created_at", DESCENDING)])
+    print(f"Connected to MongoDB database '{MONGO_DB}' at {MONGO_URI}")
+
+
+@app.on_event("shutdown")
+def on_shutdown():
+    global mongo_client
+    if mongo_client:
+        mongo_client.close()
+
+
 # ── Public endpoints ───────────────────────────────────────────────────────────
 
 @app.get("/health")
@@ -319,6 +306,7 @@ def create_order(order: OrderIn) -> dict:
             "zip": order.customer.zip,
         },
         "payment_method": order.payment_method,
+        "source_id": order.source_id,
         "items": normalized_items,
         "subtotal": round(subtotal, 2),
         "tax": tax,
@@ -335,9 +323,10 @@ def create_order(order: OrderIn) -> dict:
         order_record["square_payment_id"] = square_payment.get("id")
         order_record["receipt_url"] = square_payment.get("receipt_url")
 
-    orders = _read_orders()
-    orders.append(order_record)
-    _write_orders(orders)
+    _get_db().orders.insert_one(order_record)
+
+    # Remove _id before returning (MongoDB adds it on insert)
+    order_record.pop("_id", None)
 
     return {
         "message": "Order created",
@@ -358,9 +347,7 @@ def admin_login(body: AdminLoginIn) -> dict:
 @app.get("/api/admin/orders")
 def admin_list_orders(authorization: str | None = Header(default=None)) -> dict:
     _require_admin(authorization)
-    orders = _read_orders()
-    # Return newest first
-    orders.reverse()
+    orders = list(_get_db().orders.find({}, {"_id": 0}).sort("created_at", DESCENDING))
     return {"orders": orders}
 
 
@@ -371,23 +358,27 @@ def admin_update_order(
     authorization: str | None = Header(default=None),
 ) -> dict:
     _require_admin(authorization)
-    orders = _read_orders()
 
-    for order in orders:
-        if order.get("id") == order_id:
-            order["fulfillment_status"] = body.fulfillment_status
-            if body.tracking_number is not None:
-                order["tracking_number"] = body.tracking_number
-            _write_orders(orders)
-            return {"message": "Order updated", "order": order}
+    update_fields = {"fulfillment_status": body.fulfillment_status}
+    if body.tracking_number is not None:
+        update_fields["tracking_number"] = body.tracking_number
 
-    raise HTTPException(status_code=404, detail=f"Order not found: {order_id}")
+    result = _get_db().orders.find_one_and_update(
+        {"id": order_id},
+        {"$set": update_fields},
+        return_document=True,
+    )
+
+    if result is None:
+        raise HTTPException(status_code=404, detail=f"Order not found: {order_id}")
+
+    return {"message": "Order updated", "order": _clean_doc(result)}
 
 
-# Keep the old public endpoint working for backwards compatibility
 @app.get("/api/orders")
 def list_orders() -> dict:
-    return {"orders": _read_orders()}
+    orders = list(_get_db().orders.find({}, {"_id": 0}).sort("created_at", DESCENDING))
+    return {"orders": orders}
 
 
 if __name__ == "__main__":

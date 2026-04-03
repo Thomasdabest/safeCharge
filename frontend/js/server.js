@@ -110,6 +110,8 @@ function money(value) {
     return value.toFixed(2);
 }
 
+const SHIPPING_COST = 2.00;
+
 function buildPurchaseUnit(cart) {
     const normalizedCart = normalizeCart(cart);
     if (normalizedCart.length === 0) {
@@ -121,14 +123,20 @@ function buildPurchaseUnit(cart) {
         0
     );
 
+    const total = subtotal + SHIPPING_COST;
+
     return {
         amount: {
             currencyCode: "USD",
-            value: money(subtotal),
+            value: money(total),
             breakdown: {
                 itemTotal: {
                     currencyCode: "USD",
                     value: money(subtotal),
+                },
+                shipping: {
+                    currencyCode: "USD",
+                    value: money(SHIPPING_COST),
                 },
             },
         },
@@ -145,13 +153,33 @@ function buildPurchaseUnit(cart) {
     };
 }
 
-async function createOrder(cart) {
+async function createOrder(cart, customer) {
     ensurePaypalConfigured();
+
+    const purchaseUnit = buildPurchaseUnit(cart);
+
+    // Attach shipping address if customer info is provided
+    if (customer?.name && customer?.address) {
+        const nameParts = customer.name.trim().split(/\s+/);
+        const givenName = nameParts[0] || '';
+        const surname = nameParts.slice(1).join(' ') || givenName;
+
+        purchaseUnit.shipping = {
+            name: { fullName: customer.name },
+            address: {
+                addressLine1: customer.address,
+                adminArea2: customer.city || '',
+                adminArea1: customer.state || '',
+                postalCode: customer.zip || '',
+                countryCode: 'US',
+            },
+        };
+    }
 
     const collect = {
         body: {
             intent: "CAPTURE",
-            purchaseUnits: [buildPurchaseUnit(cart)],
+            purchaseUnits: [purchaseUnit],
         },
         prefer: "return=minimal",
     };
@@ -208,8 +236,8 @@ app.get("/api/config", (_req, res) => {
 
 app.post("/api/orders", async (req, res) => {
     try {
-        const { cart } = req.body;
-        const { jsonResponse, httpStatusCode } = await createOrder(cart);
+        const { cart, customer } = req.body;
+        const { jsonResponse, httpStatusCode } = await createOrder(cart, customer);
         res.status(httpStatusCode).json(jsonResponse);
     } catch (error) {
         console.error("Failed to create order:", error);
