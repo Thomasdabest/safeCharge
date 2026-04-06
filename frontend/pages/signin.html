@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - Mako Energy</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/auth.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-inner">
+            <a class="brand" href="../index.html" aria-label="Mako Energy Home">Mako Energy</a>
+            <nav class="main-nav" aria-label="Main navigation">
+                <a href="shop.html">Products</a>
+                <a href="cart.html">Cart</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="auth-page">
+        <div class="auth-card">
+            <h1 class="auth-title">Welcome Back</h1>
+            <p class="auth-subtitle">Sign in to your account</p>
+
+            <form id="signin-form" class="auth-form" novalidate>
+                <label class="auth-label" for="email">Email</label>
+                <input class="auth-input" id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required maxlength="200">
+
+                <label class="auth-label" for="password">Password</label>
+                <input class="auth-input" id="password" name="password" type="password" autocomplete="current-password" placeholder="Your password" required maxlength="128">
+
+                <p id="auth-error" class="auth-error" role="alert" hidden></p>
+
+                <button type="submit" class="auth-button" id="signin-btn">Sign In</button>
+            </form>
+
+            <p class="auth-switch">Don't have an account? <a href="signup.html">Sign Up</a></p>
+        </div>
+    </main>
+
+    <footer class="site-footer" aria-label="Footer">
+        <div class="footer-inner">
+            <p class="footer-copy">&copy; 2026 Mako Energy</p>
+        </div>
+    </footer>
+
+    <script src="../js/auth.js"></script>
+</body>
+</html>

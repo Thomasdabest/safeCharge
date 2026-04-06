@@ -4,21 +4,82 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import time
 import urllib.error
 import urllib.request
+from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Literal, Optional
 from uuid import uuid4
 
-from fastapi import FastAPI, Header, HTTPException
+import bcrypt
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from pymongo import MongoClient, DESCENDING
 
 ADMIN_USER = os.getenv("ADMIN_USER", "admin")
 ADMIN_PASS = os.getenv("ADMIN_PASS", "safecharge2026")
 ADMIN_SECRET = os.getenv("ADMIN_SECRET", "sc-secret-key-change-me")
+USER_SECRET = os.getenv("USER_SECRET", "sc-user-secret-change-me")
+
+# ── Rate limiting (in-memory) ─────────────────────────────────────────────────
+_rate_limit_store: dict[str, list[float]] = defaultdict(list)
+RATE_LIMIT_WINDOW = 300  # 5 minutes
+RATE_LIMIT_MAX_ATTEMPTS = 10  # max attempts per window
+
+
+def _check_rate_limit(key: str) -> None:
+    now = time.time()
+    attempts = _rate_limit_store[key]
+    # Prune old entries
+    _rate_limit_store[key] = [t for t in attempts if now - t < RATE_LIMIT_WINDOW]
+    if len(_rate_limit_store[key]) >= RATE_LIMIT_MAX_ATTEMPTS:
+        raise HTTPException(status_code=429, detail="Too many attempts. Please try again later.")
+    _rate_limit_store[key].append(now)
+
+
+# ── Password helpers ──────────────────────────────────────────────────────────
+
+EMAIL_RE = re.compile(r"^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$")
+PASSWORD_MIN_LENGTH = 8
+
+
+def _hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+
+def _verify_password(password: str, hashed: str) -> bool:
+    return bcrypt.checkpw(password.encode(), hashed.encode())
+
+
+def _create_user_token(user_id: str, email: str) -> str:
+    ts = str(int(time.time()))
+    payload = f"{user_id}.{email}.{ts}"
+    sig = hmac.new(USER_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()
+    return f"{payload}.{sig}"
+
+
+def _verify_user_token(token: str) -> dict | None:
+    parts = token.rsplit(".", 1)
+    if len(parts) != 2:
+        return None
+    payload, sig = parts
+    expected_sig = hmac.new(USER_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(sig, expected_sig):
+        return None
+    segments = payload.split(".", 2)
+    if len(segments) != 3:
+        return None
+    user_id, email, ts = segments
+    try:
+        token_time = int(ts)
+    except ValueError:
+        return None
+    if time.time() - token_time > 86400 * 7:  # 7-day expiry
+        return None
+    return {"user_id": user_id, "email": email}
 
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://127.0.0.1:27017")
 MONGO_DB = os.getenv("MONGO_DB", "safecharge")
@@ -31,7 +92,21 @@ PRODUCTS = [
         "price": 3.49,
         "currency": "USD",
         "in_stock": True,
-    },
+    }, {
+        "id": "lemon_lime",
+        "name": "Tropical Lemon Lime",
+        "description": "Carbonated lemon lime Mako Energy Drink.",
+        "price": 3.49,
+        "currency": "USD",
+        "in_stock": True,
+    }, {
+        "id": "orange",
+        "name": "Orange Ocean",
+        "description": "Carbonated orange Mako Energy Drink.",
+        "price": 3.49,
+        "currency": "USD",
+        "in_stock": True,
+    }
 ]
 
 PRODUCT_INDEX = {product["id"]: product for product in PRODUCTS}
@@ -57,6 +132,43 @@ class OrderIn(BaseModel):
     customer: CustomerIn
     payment_method: Literal["card", "cash", "paypal", "square"] = "card"
     source_id: str | None = Field(default=None, min_length=1)
+
+
+class SignUpIn(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    email: str = Field(min_length=3, max_length=200)
+    password: str = Field(min_length=8, max_length=128)
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        v = v.strip().lower()
+        if not EMAIL_RE.match(v):
+            raise ValueError("Invalid email address.")
+        return v
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if len(v) < PASSWORD_MIN_LENGTH:
+            raise ValueError(f"Password must be at least {PASSWORD_MIN_LENGTH} characters.")
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("Password must contain at least one uppercase letter.")
+        if not re.search(r"[a-z]", v):
+            raise ValueError("Password must contain at least one lowercase letter.")
+        if not re.search(r"[0-9]", v):
+            raise ValueError("Password must contain at least one number.")
+        return v
+
+
+class SignInIn(BaseModel):
+    email: str = Field(min_length=3, max_length=200)
+    password: str = Field(min_length=1, max_length=128)
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, v: str) -> str:
+        return v.strip().lower()
 
 
 class AdminLoginIn(BaseModel):
@@ -230,8 +342,8 @@ def on_startup():
     global mongo_client, db
     mongo_client = MongoClient(MONGO_URI)
     db = mongo_client[MONGO_DB]
-    # Create index on created_at for efficient sorting
     db.orders.create_index([("created_at", DESCENDING)])
+    db.users.create_index("email", unique=True)
     print(f"Connected to MongoDB database '{MONGO_DB}' at {MONGO_URI}")
 
 
@@ -240,6 +352,71 @@ def on_shutdown():
     global mongo_client
     if mongo_client:
         mongo_client.close()
+
+
+# ── Auth endpoints ────────────────────────────────────────────────────────────
+
+@app.post("/api/auth/signup")
+def signup(body: SignUpIn, request: Request) -> dict:
+    client_ip = request.client.host if request.client else "unknown"
+    _check_rate_limit(f"signup:{client_ip}")
+
+    existing = _get_db().users.find_one({"email": body.email})
+    if existing:
+        raise HTTPException(status_code=409, detail="An account with this email already exists.")
+
+    user_id = f"usr_{uuid4().hex[:12]}"
+    now = datetime.now(timezone.utc).isoformat()
+
+    user_doc = {
+        "id": user_id,
+        "name": body.name.strip(),
+        "email": body.email,
+        "password_hash": _hash_password(body.password),
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    _get_db().users.insert_one(user_doc)
+
+    token = _create_user_token(user_id, body.email)
+    return {
+        "token": token,
+        "user": {"id": user_id, "name": user_doc["name"], "email": body.email},
+        "message": "Account created successfully.",
+    }
+
+
+@app.post("/api/auth/signin")
+def signin(body: SignInIn, request: Request) -> dict:
+    client_ip = request.client.host if request.client else "unknown"
+    _check_rate_limit(f"signin:{client_ip}")
+
+    user = _get_db().users.find_one({"email": body.email})
+    # Use constant-time comparison even on missing user to prevent timing attacks
+    if not user or not _verify_password(body.password, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid email or password.")
+
+    token = _create_user_token(user["id"], user["email"])
+    return {
+        "token": token,
+        "user": {"id": user["id"], "name": user["name"], "email": user["email"]},
+        "message": "Login successful.",
+    }
+
+
+@app.get("/api/auth/me")
+def get_current_user(authorization: str | None = Header(default=None)) -> dict:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authentication required.")
+    token_data = _verify_user_token(authorization[7:])
+    if not token_data:
+        raise HTTPException(status_code=401, detail="Invalid or expired token.")
+
+    user = _get_db().users.find_one({"id": token_data["user_id"]}, {"_id": 0, "password_hash": 0})
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found.")
+    return {"user": user}
 
 
 # ── Public endpoints ───────────────────────────────────────────────────────────

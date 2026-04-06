@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Mako Energy</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/auth.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-inner">
+            <a class="brand" href="../index.html" aria-label="Mako Energy Home">Mako Energy</a>
+            <nav class="main-nav" aria-label="Main navigation">
+                <a href="shop.html">Products</a>
+                <a href="cart.html">Cart</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="auth-page">
+        <div class="auth-card">
+            <h1 class="auth-title">Create Account</h1>
+            <p class="auth-subtitle">Join Mako Energy today</p>
+
+            <form id="signup-form" class="auth-form" novalidate>
+                <label class="auth-label" for="name">Full Name</label>
+                <input class="auth-input" id="name" name="name" type="text" autocomplete="name" placeholder="Your name" required maxlength="120">
+
+                <label class="auth-label" for="email">Email</label>
+                <input class="auth-input" id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required maxlength="200">
+
+                <label class="auth-label" for="password">Password</label>
+                <input class="auth-input" id="password" name="password" type="password" autocomplete="new-password" placeholder="Min 8 chars, upper, lower, number" required minlength="8" maxlength="128">
+
+                <label class="auth-label" for="confirm-password">Confirm Password</label>
+                <input class="auth-input" id="confirm-password" name="confirm-password" type="password" autocomplete="new-password" placeholder="Re-enter password" required>
+
+                <div class="password-rules">
+                    <span id="rule-length" class="rule">8+ characters</span>
+                    <span id="rule-upper" class="rule">Uppercase</span>
+                    <span id="rule-lower" class="rule">Lowercase</span>
+                    <span id="rule-number" class="rule">Number</span>
+                </div>
+
+                <p id="auth-error" class="auth-error" role="alert" hidden></p>
+
+                <button type="submit" class="auth-button" id="signup-btn">Create Account</button>
+            </form>
+
+            <p class="auth-switch">Already have an account? <a href="signin.html">Sign In</a></p>
+        </div>
+    </main>
+
+    <footer class="site-footer" aria-label="Footer">
+        <div class="footer-inner">
+            <p class="footer-copy">&copy; 2026 Mako Energy</p>
+        </div>
+    </footer>
+
+    <script src="../js/auth.js"></script>
+</body>
+</html>
