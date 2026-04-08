@@ -1,7 +1,8 @@
 (function () {
     const STORAGE_KEY = 'safecharge_cart_v2';
-    const PAYPAL_API_BASE = 'http://127.0.0.1:8080';
-    const BACKEND_API_BASE = 'http://127.0.0.1:8000';
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const PAYPAL_API_BASE = isLocal ? 'http://127.0.0.1:8080' : 'https://safecharge-paypal.up.railway.app';
+    const BACKEND_API_BASE = isLocal ? 'http://127.0.0.1:8000' : 'https://safecharge-backend.up.railway.app';
     const SHIPPING_COST = 2.00;
 
     const cartList = document.getElementById('paypal-cart-items');

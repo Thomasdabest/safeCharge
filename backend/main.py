@@ -183,9 +183,16 @@ class FulfillmentUpdateIn(BaseModel):
 
 app = FastAPI(title="SafeCharge Store API", version="1.0.0")
 
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*")
+_origins = (
+    [o.strip() for o in ALLOWED_ORIGINS.split(",") if o.strip()]
+    if ALLOWED_ORIGINS != "*"
+    else ["*"]
+)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_origins,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
